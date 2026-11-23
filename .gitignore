@@ -1,0 +1,16 @@
+# Build output and tooling
+_site/
+dist/
+node_modules/
+.lycheecache
+
+# Local settings: never commit
+.env
+.env.*
+!.env.example
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
