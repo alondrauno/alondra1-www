@@ -1,8 +1,7 @@
-# Build output and tooling
-_site/
+# Build output
 dist/
-node_modules/
-.lycheecache
+__pycache__/
+*.pyc
 
 # Local settings: never commit
 .env

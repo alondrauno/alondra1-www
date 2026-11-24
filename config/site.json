@@ -1,0 +1,44 @@
+{
+  "$comment": "Single source of truth for plans, platforms, and links. Build-time env vars (README → Configuration) override the links. Only publish facts the product owner has confirmed: a platform is 'available' only with a verified downloadUrl, and a plan CTA is enabled only with a verified ctaUrl.",
+  "siteUrl": "https://alondra1.com",
+  "links": {
+    "login": "",
+    "register": "",
+    "privacy": "",
+    "terms": "",
+    "contact": ""
+  },
+  "plans": [
+    {
+      "id": "free",
+      "name": "Free",
+      "priceLabel": "No cost",
+      "periodLabel": "",
+      "description": "Your everyday essentials, free.",
+      "features": ["To-do", "Mail", "Calendar", "Notes", "Contacts"],
+      "ctaLabel": "Get Started Free",
+      "ctaUrl": "#download",
+      "featured": false,
+      "enabled": true
+    },
+    {
+      "id": "personal",
+      "name": "Personal",
+      "priceLabel": "Pricing coming soon",
+      "periodLabel": "",
+      "description": "Keep your life connected and archived.",
+      "features": ["Everything in Free", "Cloud sync", "Archive"],
+      "ctaLabel": "Upgrade to Personal",
+      "ctaUrl": "",
+      "featured": true,
+      "enabled": false
+    }
+  ],
+  "platforms": [
+    { "id": "windows", "label": "Windows", "status": "comingSoon", "subtitle": "Desktop app" },
+    { "id": "macos", "label": "macOS", "status": "comingSoon", "subtitle": "Desktop app" },
+    { "id": "android", "label": "Android", "status": "comingSoon", "subtitle": "Phone app" },
+    { "id": "ios", "label": "iPhone / iOS", "status": "comingSoon", "subtitle": "Phone app" },
+    { "id": "tablet", "label": "Tablet", "status": "comingSoon", "subtitle": "Tablet app" }
+  ]
+}

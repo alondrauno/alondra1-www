@@ -1,7 +1,12 @@
-name: deploy
+# Deploy alondra1.com to the on-premise host that runs shared-landing (Traefik + Docker Compose).
+# Same pattern and secrets as the other site repositories: update this repo on the server, verify its Dockerfile,
+# rebuild only the alondra1-landing service, then smoke-test https://alondra1.com.
+#
+# Required secrets: DEPLOY_HOST, DEPLOY_USER, DEPLOY_SSH_KEY
+# Optional secrets: DEPLOY_PORT, DEPLOY_BASE_DIR, DEPLOY_BRANCH, DEPLOY_GIT_TOKEN (needed for private repos,
+#                   including shared-landing), REPO_ALONDRA1_WWW
+name: Deploy to on-premise
 
-# Publishes site/ to GitHub Pages after every check passes on main.
-# One-time setup: Settings → Pages → Build and deployment → Source: GitHub Actions.
 on:
   push:
     branches: [main]
@@ -11,27 +16,60 @@ permissions:
   contents: read
 
 concurrency:
-  group: pages
+  group: onprem-deploy  # shared with every shared-landing deploy: one at a time
   cancel-in-progress: false
+
+env:
+  SSH_HOST: ${{ secrets.DEPLOY_HOST }}
+  SSH_USER: ${{ secrets.DEPLOY_USER }}
+  SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+  SSH_PORT: ${{ secrets.DEPLOY_PORT }}
+  DEPLOY_BASE_DIR: ${{ secrets.DEPLOY_BASE_DIR }}
+  DEPLOY_BRANCH: ${{ secrets.DEPLOY_BRANCH }}
+  DEPLOY_GIT_TOKEN: ${{ secrets.DEPLOY_GIT_TOKEN }}
+  REPO_ALONDRA1_WWW: ${{ secrets.REPO_ALONDRA1_WWW }}
+  COMPOSE_SERVICES: alondra1-landing
 
 jobs:
   test:
     uses: ./.github/workflows/ci.yml
 
   deploy:
+    name: SSH deploy
     needs: test
     runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+    timeout-minutes: 30
+    steps:
+      - name: Check required secrets
+        run: |
+          missing=0
+          for name in SSH_HOST SSH_USER SSH_KEY; do
+            if [ -z "${!name:-}" ]; then echo "::error::Missing required secret for $name"; missing=1; fi
+          done
+          exit "$missing"
+      - name: Checkout shared-landing deploy scripts
+        uses: actions/checkout@v4
+        with:
+          repository: muove4sea/shared-landing
+          token: ${{ secrets.DEPLOY_GIT_TOKEN || github.token }}
+      - name: Update alondra1-www on the server
+        run: bash scripts/ci-ssh-remote.sh update-repo alondra1-www
+      - name: Verify Docker build context
+        run: bash scripts/ci-ssh-remote.sh verify-repo alondra1-www
+      - name: Rebuild alondra1-landing only
+        run: bash scripts/ci-ssh-remote.sh compose-up
+
+  smoke:
+    name: Smoke — alondra1.com
+    needs: deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
         with:
-          path: site
-      - id: deployment
-        uses: actions/deploy-pages@v4
+          repository: muove4sea/shared-landing
+          token: ${{ secrets.DEPLOY_GIT_TOKEN || github.token }}
+      - name: Install DNS tools
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq dnsutils openssl
+      - name: HTTPS accessibility and health
+        run: bash scripts/ci-smoke-check.sh alondra1-www

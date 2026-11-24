@@ -1,0 +1,9 @@
+.git
+.github
+dist
+docs
+screenshots
+**/__pycache__
+.env
+.env.*
+*.md

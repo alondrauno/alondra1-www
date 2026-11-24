@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Alondra1 — Personal To-Do &amp; Daily Planning App</title>
+  <meta name="description" content="Alondra1 is a calm personal to-do app for groceries, appointments, home projects, and everyday plans. Capture tasks in seconds and plan your day. Mail, Calendar, Notes, and Contacts included free.">
+  <link rel="canonical" href="{{SITE_URL}}/">
+  <meta name="theme-color" content="#FBF9FE">
+  <meta name="color-scheme" content="light">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Alondra1">
+  <meta property="og:title" content="Alondra1 — Personal To-Do &amp; Daily Planning App">
+  <meta property="og:description" content="Organize your day. Simplify your life. A calm place for your personal tasks and plans.">
+  <meta property="og:url" content="{{SITE_URL}}/">
+  <meta property="og:image" content="{{SITE_URL}}/images/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="The Alondra1 bird logo with the words: Your personal to-do companion">
+  <meta name="twitter:card" content="summary_large_image">
+  {{ANALYTICS}}
+  <link rel="stylesheet" href="{{CSS}}">
+  <!-- Not deferred on purpose: it switches "no-js" to "js" before the body renders (inline scripts are blocked by CSP). -->
+  <script src="{{JS}}"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <!-- 1. Header / navigation -->
+  <header class="site-header" id="top">
+    <div class="container header-inner">
+      <a class="brand" href="#top" aria-label="Alondra1 home">
+        <img src="/images/alondra1-logo-96.png" alt="" width="36" height="36">
+        <span>Alondra1</span>
+      </a>
+      <nav class="primary-nav" id="primary-nav" aria-label="Main">
+        <ul class="nav-list">
+          <li><a class="nav-link" href="#features">Features</a></li>
+          <li><a class="nav-link" href="#pricing">Plans &amp; Pricing</a></li>
+          <li><a class="nav-link" href="#download">Downloads</a></li>
+        </ul>
+        <div class="nav-auth">
+          {{AUTH_MENU}}
+        </div>
+      </nav>
+      <div class="header-actions">
+        <div class="header-auth">
+          {{AUTH_DESKTOP}}
+        </div>
+        <a class="button button--primary button--sm" href="#download">Get App</a>
+        <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="primary-nav" aria-label="Open menu">
+          <span class="menu-icon-open">{{ICON_MENU}}</span>
+          <span class="menu-icon-close">{{ICON_CLOSE}}</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- 2. Hero: the mobile to-do app is the product visual on every screen size -->
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="container hero-inner">
+        <div class="hero-copy">
+          <p class="eyebrow">Your personal to-do companion</p>
+          <h1 id="hero-title">Organize your day. <span class="nowrap">Simplify your life.</span></h1>
+          <p class="lede">Keep groceries, appointments, home projects, and everyday plans in one calm place. Capture tasks in seconds and focus on what matters today.</p>
+          <div class="cta-row">
+            <a class="button button--primary button--lg" href="#download">Get App</a>
+            {{SECONDARY_CTA}}
+          </div>
+          <p class="hero-note">{{ICON_CHECK}} To-do, Mail, Calendar, Notes, and Contacts are free.</p>
+        </div>
+        <div class="hero-visual">
+          <div class="hero-glow" aria-hidden="true"></div>
+          {{HERO_PHONE}}
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Personal to-do benefits -->
+    <section class="section" id="features" aria-labelledby="features-title">
+      <div class="container">
+        <div class="section-head">
+          <p class="eyebrow">Built for personal tasks</p>
+          <h2 id="features-title">Everything your day needs, nothing it doesn’t.</h2>
+        </div>
+        <ul class="feature-grid">
+          <li class="feature-card">
+            <span class="feature-icon">{{ICON_ZAP}}</span>
+            <h3>Capture tasks quickly</h3>
+            <p>Add a task the moment you think of it.</p>
+          </li>
+          <li class="feature-card">
+            <span class="feature-icon">{{ICON_SUN}}</span>
+            <h3>Plan your day</h3>
+            <p>See what needs attention today and what can wait.</p>
+          </li>
+          <li class="feature-card">
+            <span class="feature-icon">{{ICON_LIST}}</span>
+            <h3>Keep personal lists</h3>
+            <p>Groceries, errands, home, hobbies and more.</p>
+          </li>
+          <li class="feature-card">
+            <span class="feature-icon">{{ICON_TARGET}}</span>
+            <h3>Stay on track</h3>
+            <p>Important tasks and upcoming plans, without clutter.</p>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 4. More than to-dos: secondary free features -->
+    <section class="section section--tint" id="free-apps" aria-labelledby="free-title">
+      <div class="container">
+        <div class="section-head">
+          <h2 id="free-title">More than to-dos. All the essentials, free.</h2>
+          <p class="section-intro">Stay on top of your everyday life with Mail, Calendar, Notes, and Contacts — included at no extra cost.</p>
+        </div>
+        <ul class="free-strip">
+          <li class="free-item free-item--lead">
+            <span class="free-icon">{{ICON_TODO}}</span>
+            <span><strong>To-do</strong> Your personal tasks and lists, at the heart of Alondra1.</span>
+          </li>
+          <li class="free-item">
+            <span class="free-icon">{{ICON_MAIL}}</span>
+            <span><strong>Mail</strong> Your email alongside your personal plans.</span>
+          </li>
+          <li class="free-item">
+            <span class="free-icon">{{ICON_CALENDAR}}</span>
+            <span><strong>Calendar</strong> See dates and events in one place.</span>
+          </li>
+          <li class="free-item">
+            <span class="free-icon">{{ICON_NOTES}}</span>
+            <span><strong>Notes</strong> Keep useful ideas and information handy.</span>
+          </li>
+          <li class="free-item">
+            <span class="free-icon">{{ICON_CONTACTS}}</span>
+            <span><strong>Contacts</strong> Keep the people you need close.</span>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 5. How it works -->
+    <section class="section" id="how-it-works" aria-labelledby="how-title">
+      <div class="container">
+        <div class="section-head">
+          <h2 id="how-title">Up and running in three steps</h2>
+        </div>
+        <ol class="steps">
+          <li class="step"><span class="step-num" aria-hidden="true">1</span><h3>Get the app</h3><p>Choose the version for your device.</p></li>
+          <li class="step"><span class="step-num" aria-hidden="true">2</span><h3>Add your tasks</h3><p>Write down what is on your mind and sort it into lists.</p></li>
+          <li class="step"><span class="step-num" aria-hidden="true">3</span><h3>Plan your day</h3><p>Pick what matters today and let the rest wait.</p></li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- 6. Plans & Pricing -->
+    <section class="section section--tint" id="pricing" aria-labelledby="pricing-title">
+      <div class="container">
+        <div class="section-head">
+          <p class="eyebrow">Plans &amp; Pricing</p>
+          <h2 id="pricing-title">Free for everyday life. Personal when you want more.</h2>
+          <p class="section-intro">Every app is free. Personal adds optional cloud sync and archive.</p>
+        </div>
+        <div class="plans">
+          {{PLANS}}
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. Final CTA -->
+    <section class="section final-cta" aria-labelledby="final-title">
+      <div class="container">
+        <div class="final-card">
+          <img src="/images/alondra1-logo-256.png" alt="" width="96" height="96" loading="lazy">
+          <h2 id="final-title">A calmer way to manage your everyday tasks.</h2>
+          <div class="cta-row cta-row--center">
+            <a class="button button--primary button--lg" href="#download">Get App</a>
+            {{SECONDARY_CTA}}
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8. Platforms: the last major section -->
+    <section class="section platforms-section" id="download" aria-labelledby="download-title">
+      <div class="container">
+        <div class="section-head">
+          <p class="eyebrow">Available on your devices</p>
+          <h2 id="download-title">Your tasks, wherever life takes you.</h2>
+          <p class="section-intro">Choose the version of Alondra1 that works for your device.</p>
+        </div>
+        <div class="showcase">
+          <figure class="laptop">
+            <div class="laptop-screen">
+              <img src="/images/windows-todo-1200.png" srcset="/images/windows-todo-720.png 720w, /images/windows-todo-1200.png 1200w" sizes="(min-width: 1024px) 640px, 90vw" alt="The Alondra1 Windows app showing My Day in the To-do workspace" width="1200" height="773" loading="lazy">
+            </div>
+            <div class="laptop-base" aria-hidden="true"></div>
+            <figcaption>Alondra1 for Windows</figcaption>
+          </figure>
+          {{SHOWCASE_PHONE}}
+        </div>
+        <ul class="platform-grid">
+          {{PLATFORMS}}
+        </ul>
+        <p class="fine-print">{{ICON_LOCK}} Each device keeps its own tasks. Cloud sync between devices is part of the Personal plan.</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- 9. Footer -->
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <a class="brand brand--footer" href="#top" aria-label="Back to top">
+        <img src="/images/alondra1-logo-96.png" alt="" width="28" height="28" loading="lazy">
+        <span>Alondra1</span>
+      </a>
+      <ul class="footer-links">{{FOOTER_LINKS}}</ul>
+      {{COOKIE_SETTINGS}}
+      <p class="copyright">© <span data-year>{{YEAR}}</span> Alondra1</p>
+    </div>
+  </footer>
+
+  {{CONSENT_BANNER}}
+</body>
+</html>

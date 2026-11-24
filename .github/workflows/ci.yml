@@ -11,24 +11,59 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.ref }}-${{ github.event_name }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  validate:
+  test-and-build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Content and page tests
+        run: python -I -m unittest discover -s tests -t . -v
+      - name: Build
+        run: python -I build.py --out dist
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
       - name: Validate HTML
-        run: npx --yes html-validate@9 "site/**/*.html"
-      - name: Check links (site and Markdown; local files only)
+        run: npx --yes html-validate@9 dist/index.html dist/404.html
+      - name: Check links (built site and Markdown; local files only)
         uses: lycheeverse/lychee-action@v2
         with:
-          args: --offline --no-progress --root-dir "${{ github.workspace }}/site" './site/**/*.html' './**/*.md'
+          args: --offline --no-progress --root-dir "${{ github.workspace }}/dist" 'dist/**/*.html' './*.md' './docs/**/*.md'
           fail: true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: site
+          path: dist
+
+  container:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the image
+        run: docker build -t alondra1-landing:ci .
+      - name: Smoke test the container
+        run: |
+          docker run -d --name landing -p 127.0.0.1:8080:8080 --security-opt no-new-privileges:true alondra1-landing:ci
+          for i in $(seq 1 20); do curl -fsS http://127.0.0.1:8080/healthz && break; sleep 1; done
+          test "$(curl -fsS http://127.0.0.1:8080/healthz)" = "ok"
+          curl -fsS http://127.0.0.1:8080/ | grep -q 'Organize your day.'
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/missing)" = 404
+          headers="$(curl -fsSI http://127.0.0.1:8080/)"
+          echo "$headers" | grep -qi '^content-security-policy:'
+          echo "$headers" | grep -qi '^x-content-type-options: nosniff'
+          ! echo "$headers" | grep -qi '^server: nginx/'
+          css="$(curl -fsS http://127.0.0.1:8080/ | grep -o '/assets/styles\.[0-9a-f]*\.css')"
+          curl -fsSI "http://127.0.0.1:8080${css}" | grep -qi 'immutable'
+          test "$(docker inspect -f '{{.Config.User}}' alondra1-landing:ci)" != "root"
+      - name: Container logs
+        if: always()
+        run: docker logs landing || true
 
   secrets-scan:
     runs-on: ubuntu-latest
