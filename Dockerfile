@@ -3,7 +3,7 @@
 #   docker run --rm -e ALONDRA1_ENVIRONMENT=dev -p 127.0.0.1:8080:8080 alondra1-landing:local   # http://127.0.0.1:8080
 # One image for every environment: prod runs the exact digest that passed in dev; ALONDRA1_ENVIRONMENT picks the variant.
 
-FROM python:3.13-alpine@sha256:9ef1a599f863231c3d91e941389bfdc4a2d6070557243d54df1a4e57015b960e AS build
+FROM python:3.15-alpine@sha256:0f9552bb28711333da16915ec146f5e6bb44a7fdac9ced15dc17c2e0206346dd AS build
 WORKDIR /src
 COPY build.py ./
 COPY config ./config
