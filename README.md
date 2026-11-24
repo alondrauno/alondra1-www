@@ -47,7 +47,7 @@ The image build runs the tests first, so a page that breaks a content rule never
 | `tests/` | `unittest` suite: plan and platform rules, links, section order, images, consent banner and Consent Mode defaults, no other third-party requests. |
 | `nginx/` | Server config: port 8080, `/healthz`, security headers (strict CSP), caching. |
 | `Dockerfile` | Python build stage → `nginxinc/nginx-unprivileged:stable-alpine`. |
-| `docs/` | [Launch checklist and verification results](docs/LAUNCH.md), screenshots. |
+| `docs/` | [Feature map](docs/FEATURE-MAP.md) (every page feature with its file and test), [launch checklist and verification results](docs/LAUNCH.md), screenshots. |
 
 ## Configuration
 
