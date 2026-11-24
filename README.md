@@ -2,7 +2,7 @@
 
 # Alondra1 landing page
 
-[![ci](https://github.com/nikita4sea/alondra1-www/actions/workflows/ci.yml/badge.svg)](https://github.com/nikita4sea/alondra1-www/actions/workflows/ci.yml)
+[![ci](https://github.com/alondrauno/alondra1-www/actions/workflows/ci.yml/badge.svg)](https://github.com/alondrauno/alondra1-www/actions/workflows/ci.yml)
 
 The one-page marketing site for **alondra1.com**: a personal to-do app first, with Mail, Calendar, Notes, and Contacts included free, and paid plans that add cloud sync, archive and shared spaces. It is a static site built by a small standard-library Python script and served by unprivileged nginx in its own container. One image contains a `dev` and a `prod` variant; [alondra1-infra](https://github.com/alondrauno/alondra1-infra) deploys it on its own landing server per environment (dev.alondra1.com, alondra1.com) behind Cloudflare.
 
@@ -119,7 +119,7 @@ All third-party actions are pinned to commit SHAs. Repository settings: the `dev
 
 ## Related repositories
 
-[alondra1-infra](https://github.com/alondrauno/alondra1-infra) (hosting and releases) · [alondra1-windows](https://github.com/nikita4sea/alondra1-windows) · [alondra1-backend](https://github.com/nikita4sea/alondra1-backend) · [alondra1-android](https://github.com/nikita4sea/alondra1-android) · [alondra1-iphone](https://github.com/nikita4sea/alondra1-iphone) · [alondra1-mac](https://github.com/nikita4sea/alondra1-mac)
+[alondra1-infra](https://github.com/alondrauno/alondra1-infra) (hosting and releases) · [alondra1-windows](https://github.com/alondrauno/alondra1-windows) · [alondra1-backend](https://github.com/alondrauno/alondra1-backend) · [alondra1-android](https://github.com/alondrauno/alondra1-android) · [alondra1-iphone](https://github.com/alondrauno/alondra1-iphone) · [alondra1-mac](https://github.com/alondrauno/alondra1-mac)
 
 ## License
 

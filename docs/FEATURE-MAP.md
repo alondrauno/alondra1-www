@@ -1,6 +1,6 @@
 # Feature map: alondra1.com landing page
 
-Every capability and atomic feature of the landing page, with the file that implements it and the test that enforces it. Use it to plan a change without reading the source. Product features of the apps are mapped in their own repositories ([Windows](https://github.com/nikita4sea/alondra1-windows/blob/main/docs/FEATURE-MAP.md), [Android](https://github.com/nikita4sea/alondra1-android/blob/main/docs/FEATURE-MAP.md), [backend and parity table](https://github.com/nikita4sea/alondra1-backend/blob/main/docs/FEATURE-MAP.md)).
+Every capability and atomic feature of the landing page, with the file that implements it and the test that enforces it. Use it to plan a change without reading the source. Product features of the apps are mapped in their own repositories ([Windows](https://github.com/alondrauno/alondra1-windows/blob/main/docs/FEATURE-MAP.md), [Android](https://github.com/alondrauno/alondra1-android/blob/main/docs/FEATURE-MAP.md), [backend and parity table](https://github.com/alondrauno/alondra1-backend/blob/main/docs/FEATURE-MAP.md)).
 
 **Status:** **Done**: implemented and tested. **Waiting**: built, but hidden or disabled until the owner sets a value ([LAUNCH.md](LAUNCH.md)). **Gap**: not built.
 
