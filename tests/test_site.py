@@ -314,8 +314,8 @@ class Consent(unittest.TestCase):
 
     def test_banner_is_small_and_balanced(self):
         banner = self.html[self.html.index('id="consent"'):]
-        banner = banner[:banner.index("</div>\n  </div>")]
-        self.assertIn("hidden", self.html[self.html.index('<div class="consent"'):self.html.index('id="consent"') + 80])
+        banner = banner[:banner.index("</section>")]
+        self.assertIn("hidden", self.html[self.html.index('<section class="consent"'):self.html.index('id="consent"') + 80])
         buttons = re.findall(r'<button class="([^"]+)" type="button" data-consent="(granted|denied)">', banner)
         self.assertEqual(sorted(b[1] for b in buttons), ["denied", "granted"])
         self.assertEqual(len({b[0] for b in buttons}), 1, "Accept and Decline must look the same")

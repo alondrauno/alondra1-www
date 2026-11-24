@@ -247,6 +247,9 @@ PHONE_SCREENS = {
 }
 
 
+M_DOT = '<span class="m-dot">·</span>'
+
+
 def phone(screen: str, label: str, size: str = "lg") -> str:
     data = PHONE_SCREENS[screen]
     rows = []
@@ -266,7 +269,7 @@ def phone(screen: str, label: str, size: str = "lg") -> str:
         rows.append(
             f'<li class="{" ".join(classes)}"><span class="m-check">{check}</span>'
             f'<span class="m-body"><span class="m-title">{esc(task["title"])}</span>'
-            f'<span class="m-meta">{"<span class=m-dot>·</span>".join(meta)}</span></span>{star}</li>'
+            f'<span class="m-meta">{M_DOT.join(meta)}</span></span>{star}</li>'
         )
     return f"""<figure class="phone phone--{size}" data-concept="mobile-ui">
   <div class="phone-frame" role="img" aria-label="{esc(label)}">
@@ -284,7 +287,7 @@ def phone(screen: str, label: str, size: str = "lg") -> str:
       </div>
       <ul class="m-list">{"".join(rows)}</ul>
       <div class="m-add">{icon("plus", "m-ico", 16)}<span>{esc(data["add"])}</span></div>
-      <nav class="m-tabs"><span class="is-active">{icon("sun", "m-ico", 18)}My Day</span><span>{icon("star", "m-ico", 18)}Important</span><span>{icon("calendar", "m-ico", 18)}Planned</span><span>{icon("list", "m-ico", 18)}Lists</span></nav>
+      <div class="m-tabs"><span class="is-active">{icon("sun", "m-ico", 18)}My Day</span><span>{icon("star", "m-ico", 18)}Important</span><span>{icon("calendar", "m-ico", 18)}Planned</span><span>{icon("list", "m-ico", 18)}Lists</span></div>
     </div>
   </div>
 </figure>"""
@@ -420,13 +423,13 @@ def consent_banner(config: dict) -> str:
         return ""
     privacy = config["links"]["privacy"]
     more = f' <a {link_attrs(privacy)}>Privacy</a>' if privacy else ""
-    return f"""<div class="consent" id="consent" role="region" aria-label="Cookie consent" hidden>
+    return f"""<section class="consent" id="consent" aria-label="Cookie consent" hidden>
     <p class="consent-text">We use analytics cookies only if you agree.{more}</p>
     <div class="consent-actions">
       <button class="consent-btn" type="button" data-consent="denied">Decline</button>
       <button class="consent-btn" type="button" data-consent="granted">Accept</button>
     </div>
-  </div>"""
+  </section>"""
 
 
 def cookie_settings(config: dict) -> str:
@@ -466,7 +469,9 @@ def render(config: dict, css: str, js: str, year: int, analytics: str = "") -> s
             raise KeyError(f"template placeholder {{{{{key}}}}} has no value")
         return values[key]
 
-    return re.sub(r"\{\{\s*([A-Z0-9_]+)\s*\}\}", replace, page)
+    page = re.sub(r"\{\{\s*([A-Z0-9_]+)\s*\}\}", replace, page)
+    # Empty placeholders leave indentation behind: no trailing whitespace in the output.
+    return re.sub(r"[ \t]+$", "", page, flags=re.MULTILINE)
 
 
 def build(out: Path, env: dict[str, str] | None = None, year: int | None = None, environment: str | None = None) -> dict:
