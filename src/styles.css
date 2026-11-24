@@ -533,10 +533,12 @@ a { color: var(--primary); }
 .plans {
   display: grid;
   gap: var(--s5);
-  max-width: 860px;
+  max-width: 1180px;
   margin: 0 auto;
 }
 @media (min-width: 768px) { .plans { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1180px) { .plans { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.plans-note { max-width: 860px; margin: var(--s5) auto 0; text-align: center; color: var(--muted); font-size: 0.95rem; }
 .plan {
   display: flex;
   flex-direction: column;
@@ -649,6 +651,7 @@ a { color: var(--primary); }
 .platform-text { display: flex; flex-direction: column; min-width: 0; flex: 1; }
 .platform-name { font-weight: 650; }
 .platform-sub { color: var(--muted); font-size: 0.9rem; }
+.platform-modules { color: var(--muted); font-size: 0.82rem; }
 .status {
   display: inline-block;
   padding: 4px 10px;

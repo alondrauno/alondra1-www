@@ -1,0 +1,25 @@
+# Alondra1 landing on a deployed host (alondra1-infra deploys this file from the release commit, checked by SHA-256).
+# The edge (Cloudflare Tunnel connector on the host) reaches it on 127.0.0.1:8080.
+#   ALONDRA1_LANDING_IMAGE=ghcr.io/<owner>/alondra1-landing@sha256:... ALONDRA1_ENVIRONMENT=dev docker compose up -d
+name: alondra1-landing
+
+services:
+  landing:
+    image: ${ALONDRA1_LANDING_IMAGE:?set ALONDRA1_LANDING_IMAGE to an image digest}
+    restart: unless-stopped
+    environment:
+      ALONDRA1_ENVIRONMENT: ${ALONDRA1_ENVIRONMENT:?set ALONDRA1_ENVIRONMENT to dev or prod}
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /etc/nginx/conf.d:uid=101,gid=101
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+    ports:
+      - "127.0.0.1:8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/healthz || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

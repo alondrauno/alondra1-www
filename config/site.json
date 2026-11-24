@@ -1,5 +1,5 @@
 {
-  "$comment": "Single source of truth for plans, platforms, and links. Build-time env vars (README → Configuration) override the links. Only publish facts the product owner has confirmed: a platform is 'available' only with a verified downloadUrl, and a plan CTA is enabled only with a verified ctaUrl.",
+  "$comment": "Single source of truth for plans, platforms, and links. The image contains one variant per environment (environments.dev, environments.prod), selected at container start (ALONDRA1_ENVIRONMENT). Only publish facts the product owner has confirmed: a platform is 'available' only with a verified downloadUrl, a plan CTA is enabled only with a verified ctaUrl and an approved price, and the Web app link only once it is verified (webApp.enabled).",
   "siteUrl": "https://alondra1.com",
   "links": {
     "login": "",
@@ -8,6 +8,38 @@
     "terms": "",
     "contact": ""
   },
+  "environments": {
+    "dev": {
+      "siteUrl": "https://dev.alondra1.com",
+      "noindex": true,
+      "gtmId": "",
+      "links": {
+        "login": "https://api.dev.alondra1.com/account/",
+        "register": "https://api.dev.alondra1.com/account/",
+        "privacy": "",
+        "terms": "",
+        "contact": ""
+      },
+      "webAppUrl": "https://app.dev.alondra1.com/"
+    },
+    "prod": {
+      "siteUrl": "https://alondra1.com",
+      "noindex": false,
+      "gtmId": "GTM-T6TDXTK3",
+      "links": {
+        "login": "https://api.alondra1.com/account/",
+        "register": "https://api.alondra1.com/account/",
+        "privacy": "",
+        "terms": "",
+        "contact": ""
+      },
+      "webAppUrl": "https://app.alondra1.com/"
+    }
+  },
+  "webApp": {
+    "enabled": false,
+    "label": "Open Web App"
+  },
   "plans": [
     {
       "id": "free",
@@ -15,7 +47,13 @@
       "priceLabel": "No cost",
       "periodLabel": "",
       "description": "Your everyday essentials, free.",
-      "features": ["To-do", "Mail", "Calendar", "Notes", "Contacts"],
+      "features": [
+        "To-do",
+        "Mail",
+        "Calendar",
+        "Notes",
+        "Contacts"
+      ],
       "ctaLabel": "Get Started Free",
       "ctaUrl": "#download",
       "featured": false,
@@ -27,18 +65,107 @@
       "priceLabel": "Pricing coming soon",
       "periodLabel": "",
       "description": "Keep your life connected and archived.",
-      "features": ["Everything in Free", "Cloud sync", "Archive"],
+      "features": [
+        "Everything in Free",
+        "Cloud sync",
+        "Archive"
+      ],
       "ctaLabel": "Upgrade to Personal",
       "ctaUrl": "",
       "featured": true,
       "enabled": false
+    },
+    {
+      "id": "family",
+      "name": "Friends & Family",
+      "priceLabel": "Pricing coming soon",
+      "periodLabel": "",
+      "description": "A shared space for your household.",
+      "features": [
+        "Everything in Personal",
+        "Cloud sync",
+        "Archive",
+        "Family space",
+        "Member invites"
+      ],
+      "ctaLabel": "Choose Friends & Family",
+      "ctaUrl": "",
+      "featured": false,
+      "enabled": false
+    },
+    {
+      "id": "enterprise",
+      "name": "Enterprise",
+      "priceLabel": "Contact us",
+      "periodLabel": "",
+      "description": "Managed spaces and roles for your team.",
+      "features": [
+        "Everything in Friends & Family",
+        "Cloud sync",
+        "Archive",
+        "Managed spaces and roles"
+      ],
+      "ctaLabel": "Contact sales",
+      "ctaUrl": "",
+      "featured": false,
+      "enabled": false
     }
   ],
+  "plansNote": "Mail and Contacts are in the Windows app. The Android app has To-do, Notes and Calendar. Paid plans are not on sale yet: prices are pending approval.",
   "platforms": [
-    { "id": "windows", "label": "Windows", "status": "comingSoon", "subtitle": "Desktop app" },
-    { "id": "macos", "label": "macOS", "status": "comingSoon", "subtitle": "Desktop app" },
-    { "id": "android", "label": "Android", "status": "comingSoon", "subtitle": "Phone app" },
-    { "id": "ios", "label": "iPhone / iOS", "status": "comingSoon", "subtitle": "Phone app" },
-    { "id": "tablet", "label": "Tablet", "status": "comingSoon", "subtitle": "Tablet app" }
+    {
+      "id": "windows",
+      "label": "Windows",
+      "status": "comingSoon",
+      "subtitle": "Desktop app",
+      "modules": [
+        "To-do",
+        "Mail",
+        "Calendar",
+        "Notes",
+        "Contacts"
+      ]
+    },
+    {
+      "id": "macos",
+      "label": "macOS",
+      "status": "comingSoon",
+      "subtitle": "Desktop app",
+      "modules": []
+    },
+    {
+      "id": "android",
+      "label": "Android",
+      "status": "comingSoon",
+      "subtitle": "Phone app",
+      "modules": [
+        "To-do",
+        "Notes",
+        "Calendar"
+      ]
+    },
+    {
+      "id": "ios",
+      "label": "iPhone / iOS",
+      "status": "comingSoon",
+      "subtitle": "Phone app",
+      "modules": []
+    },
+    {
+      "id": "tablet",
+      "label": "Tablet",
+      "status": "comingSoon",
+      "subtitle": "Tablet app",
+      "modules": []
+    },
+    {
+      "id": "web",
+      "label": "Web",
+      "status": "comingSoon",
+      "subtitle": "In your browser",
+      "modules": [
+        "To-do"
+      ]
+    }
   ]
 }

@@ -1,11 +1,13 @@
-"""Build the Alondra1 landing page into a static folder (default: dist/).
+"""Build the Alondra1 landing page into static folders, one per environment.
 
-Standard library only. Content data lives in config/site.json; links can be overridden at build time with
-environment variables (SITE_URL, LOGIN_URL, REGISTER_URL, PRIVACY_URL, TERMS_URL, CONTACT_URL, GTM_ID), which
-the Dockerfile receives as build arguments. The values are baked into the HTML: changing them needs a rebuild.
+Standard library only. Content data lives in config/site.json; each environment (dev, prod) overlays its site URL,
+links, analytics and indexing rules. One image carries both variants and nginx serves the one named by
+ALONDRA1_ENVIRONMENT, so prod runs exactly the image that passed in dev. Environment variables (SITE_URL, LOGIN_URL,
+REGISTER_URL, PRIVACY_URL, TERMS_URL, CONTACT_URL, GTM_ID) still override values for local builds.
 
-    python build.py                # -> dist/
-    python build.py --out /dist    # Docker build stage
+    python build.py                    # -> dist/dev and dist/prod
+    python build.py --env prod         # -> dist/ (one variant)
+    python build.py --out /dist        # Docker build stage
 """
 
 from __future__ import annotations
@@ -29,7 +31,10 @@ PUBLIC = ROOT / "public"  # copied as-is
 
 CORE_FREE_APPS = ("To-do", "Mail", "Calendar", "Notes", "Contacts")
 PAID_ONLY_FEATURES = ("Cloud sync", "Archive")
-PLATFORM_IDS = ("windows", "macos", "android", "ios", "tablet")
+PLATFORM_IDS = ("windows", "macos", "android", "ios", "tablet", "web")
+ENVIRONMENTS = ("dev", "prod")
+# Mail and Contacts exist only in the Windows app; no other platform may claim them (spec v1.1 section 9).
+WINDOWS_ONLY_MODULES = ("Mail", "Contacts")
 PLATFORM_STATUSES = ("available", "comingSoon", "notSupported")
 LINK_ENV = {
     "login": "LOGIN_URL",
@@ -48,17 +53,33 @@ class ConfigError(ValueError):
 # Configuration
 # ---------------------------------------------------------------------------------------------------------------
 
-def load_config(path: Path = CONFIG, env: dict[str, str] | None = None) -> dict:
+def load_config(path: Path = CONFIG, env: dict[str, str] | None = None, environment: str | None = None) -> dict:
     env = os.environ if env is None else env
     config = json.loads(path.read_text(encoding="utf-8"))
     config.pop("$comment", None)
+    environments = config.pop("environments", {})
+    config["environment"] = environment or "local"
+    config["noindex"] = False
+    config["webAppUrl"] = ""
+    gtm_default = ""
+    if environment is not None:
+        if environment not in ENVIRONMENTS or environment not in environments:
+            raise ConfigError(f"unknown environment {environment!r}")
+        overlay = environments[environment]
+        config["siteUrl"] = overlay["siteUrl"]
+        config["links"] = dict(overlay["links"])
+        config["noindex"] = bool(overlay["noindex"])
+        config["webAppUrl"] = overlay.get("webAppUrl", "")
+        gtm_default = overlay.get("gtmId", "")
     if env.get("SITE_URL"):
         config["siteUrl"] = env["SITE_URL"]
     for key, var in LINK_ENV.items():
         if env.get(var) is not None and env.get(var) != "":
             config["links"][key] = env[var].strip()
-    # Google Tag Manager is off unless a container id is supplied (production only; see README → Analytics).
-    config["gtmId"] = (env.get("GTM_ID") or "").strip()
+    # Google Tag Manager: from the environment (prod only) or GTM_ID; never in a noindex (dev) variant.
+    config["gtmId"] = (env.get("GTM_ID") or gtm_default).strip()
+    if config["noindex"]:
+        config["gtmId"] = ""
     validate(config)
     return config
 
@@ -83,6 +104,16 @@ def validate(config: dict) -> None:
         if value and not is_valid_link(value):
             raise ConfigError(f"links.{key} must be https://, mailto:, /path or #anchor, got {value!r}")
 
+    environment = config.get("environment", "local")
+    web = config.get("webApp", {"enabled": False})
+    if web.get("enabled") and environment != "local" and not config.get("webAppUrl", "").startswith("https://"):
+        raise ConfigError("webApp.enabled needs an https webAppUrl for the environment")
+    if environment == "dev" and not config["siteUrl"].endswith("dev.alondra1.com"):
+        raise ConfigError("the dev variant must use a dev hostname")
+    if environment == "prod" and (
+            "dev." in config["siteUrl"] or "dev." in config.get("webAppUrl", "")
+            or any("dev." in value for value in config["links"].values())):
+        raise ConfigError("the prod variant must not contain a dev hostname")
     if config.get("gtmId") and not re.fullmatch(r"GTM-[A-Z0-9]{4,12}", config["gtmId"]):
         raise ConfigError(f"GTM_ID must look like GTM-XXXXXXX, got {config['gtmId']!r}")
 
@@ -124,6 +155,10 @@ def validate(config: dict) -> None:
         status = platform.get("status")
         if status not in PLATFORM_STATUSES:
             raise ConfigError(f"platform {platform['id']!r} has invalid status {status!r}")
+        if platform["id"] != "windows":
+            for module in WINDOWS_ONLY_MODULES:
+                if module in platform.get("modules", []):
+                    raise ConfigError(f"platform {platform['id']!r} must not list {module} (Windows only)")
         url = platform.get("downloadUrl", "")
         if status == "available":
             if not url.startswith("https://"):
@@ -275,6 +310,23 @@ def secondary_cta(config: dict) -> str:
     return f'<a class="button button--ghost" {link_attrs(url)}>Create account</a>' if url else ""
 
 
+def web_app_cta(config: dict) -> str:
+    """The Web app button appears only once the Web app is verified (webApp.enabled) for this environment."""
+    web = config.get("webApp", {})
+    if not web.get("enabled") or not config.get("webAppUrl"):
+        return ""
+    return f'<a class="button button--secondary" {link_attrs(config["webAppUrl"])}>{esc(web.get("label", "Open Web App"))}</a>'
+
+
+def robots_meta(config: dict) -> str:
+    return '<meta name="robots" content="noindex, nofollow">' if config.get("noindex") else ""
+
+
+def plans_note(config: dict) -> str:
+    note = config.get("plansNote", "")
+    return f'<p class="plans-note">{esc(note)}</p>' if note else ""
+
+
 def plans_html(config: dict) -> str:
     cards = []
     for plan in config["plans"]:
@@ -306,7 +358,8 @@ def plans_html(config: dict) -> str:
 
 
 STATUS_TEXT = {"available": "Available", "comingSoon": "Coming soon", "notSupported": "Not available"}
-PLATFORM_ICON = {"windows": "monitor", "macos": "laptop", "android": "phone", "ios": "phone", "tablet": "tablet"}
+PLATFORM_ICON = {"windows": "monitor", "macos": "laptop", "android": "phone", "ios": "phone", "tablet": "tablet",
+                 "web": "monitor"}
 
 
 def platforms_html(config: dict) -> str:
@@ -314,6 +367,8 @@ def platforms_html(config: dict) -> str:
     for p in config["platforms"]:
         status = p["status"]
         subtitle = f'<span class="platform-sub">{esc(p["subtitle"])}</span>' if p.get("subtitle") else ""
+        if p.get("modules"):
+            subtitle += f'<span class="platform-modules">{esc(", ".join(p["modules"]))}</span>'
         if status == "available":
             action = (f'<a class="button button--primary button--sm" {link_attrs(p["downloadUrl"])} '
                       f'aria-label="Download Alondra1 for {esc(p["label"])}">Download</a>')
@@ -392,6 +447,9 @@ def render(config: dict, css: str, js: str, year: int, analytics: str = "") -> s
         "AUTH_DESKTOP": auth_links(config, "header"),
         "AUTH_MENU": auth_links(config, "menu"),
         "SECONDARY_CTA": secondary_cta(config),
+        "WEB_APP_CTA": web_app_cta(config),
+        "ROBOTS_META": robots_meta(config),
+        "PLANS_NOTE": plans_note(config),
         "HERO_PHONE": phone("myday", "Illustration of the Alondra1 mobile to-do app showing My Day with four personal tasks"),
         "SHOWCASE_PHONE": phone("groceries", "Illustration of the Alondra1 mobile to-do app showing a groceries list", "md"),
         "PLANS": plans_html(config),
@@ -411,8 +469,8 @@ def render(config: dict, css: str, js: str, year: int, analytics: str = "") -> s
     return re.sub(r"\{\{\s*([A-Z0-9_]+)\s*\}\}", replace, page)
 
 
-def build(out: Path, env: dict[str, str] | None = None, year: int | None = None) -> dict:
-    config = load_config(env=env)
+def build(out: Path, env: dict[str, str] | None = None, year: int | None = None, environment: str | None = None) -> dict:
+    config = load_config(env=env, environment=environment)
     if out.exists():
         shutil.rmtree(out)
     shutil.copytree(PUBLIC, out)
@@ -423,13 +481,17 @@ def build(out: Path, env: dict[str, str] | None = None, year: int | None = None)
     (out / "index.html").write_text(render(config, css, js, year, analytics), encoding="utf-8", newline="\n")
 
     site = config["siteUrl"]
-    (out / "robots.txt").write_text(f"User-agent: *\nAllow: /\n\nSitemap: {site}/sitemap.xml\n", encoding="utf-8",
-                                    newline="\n")
-    (out / "sitemap.xml").write_text(
-        '<?xml version="1.0" encoding="UTF-8"?>\n'
-        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
-        f"  <url><loc>{site}/</loc></url>\n"
-        "</urlset>\n", encoding="utf-8", newline="\n")
+    if config["noindex"]:
+        # dev and other non-public variants: keep crawlers out entirely (nginx adds X-Robots-Tag as well).
+        (out / "robots.txt").write_text("User-agent: *\nDisallow: /\n", encoding="utf-8", newline="\n")
+    else:
+        (out / "robots.txt").write_text(f"User-agent: *\nAllow: /\n\nSitemap: {site}/sitemap.xml\n",
+                                        encoding="utf-8", newline="\n")
+        (out / "sitemap.xml").write_text(
+            '<?xml version="1.0" encoding="UTF-8"?>\n'
+            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+            f"  <url><loc>{site}/</loc></url>\n"
+            "</urlset>\n", encoding="utf-8", newline="\n")
     not_found = (ROOT / "src" / "404.html").read_text(encoding="utf-8").replace("{{CSS}}", css)
     (out / "404.html").write_text(not_found, encoding="utf-8", newline="\n")
 
@@ -442,13 +504,21 @@ def build(out: Path, env: dict[str, str] | None = None, year: int | None = None)
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--out", type=Path, default=ROOT / "dist")
+    parser.add_argument("--env", choices=ENVIRONMENTS, help="build one variant into --out (default: every variant)")
     args = parser.parse_args(argv)
     try:
-        build(args.out)
+        if args.env:
+            build(args.out, environment=args.env)
+            print(f"built {args.out} ({args.env})")
+        else:
+            if args.out.exists():
+                shutil.rmtree(args.out)
+            for environment in ENVIRONMENTS:
+                build(args.out / environment, environment=environment)
+                print(f"built {args.out / environment}")
     except ConfigError as error:
         print(f"config error: {error}", file=sys.stderr)
         return 1
-    print(f"built {args.out}")
     return 0
 
 

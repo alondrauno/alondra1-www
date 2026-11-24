@@ -67,9 +67,9 @@ class Page(HTMLParser):
             self.title += data
 
 
-def built(env=None):
+def built(env=None, environment=None):
     out = Path(tempfile.mkdtemp(prefix="alondra1-www-")) / "dist"
-    cfg = build.build(out, env=env or {}, year=2026)
+    cfg = build.build(out, env=env or {}, year=2026, environment=environment)
     html = (out / "index.html").read_text(encoding="utf-8")
     page = Page()
     page.feed(html)
@@ -128,7 +128,7 @@ class PlanRules(unittest.TestCase):
 
 class PlatformRules(unittest.TestCase):
     def test_all_five_platforms_in_order(self):
-        self.assertEqual([p["id"] for p in CONFIG["platforms"]], ["windows", "macos", "android", "ios", "tablet"])
+        self.assertEqual([p["id"] for p in CONFIG["platforms"]], ["windows", "macos", "android", "ios", "tablet", "web"])
 
     def test_available_requires_https_download(self):
         bad = config()
@@ -151,7 +151,7 @@ class PlatformRules(unittest.TestCase):
         html = build.platforms_html(good)
         self.assertEqual(html.count(">Download</a>"), 1)
         self.assertIn('href="https://example.com/Alondra1-setup.exe"', html)
-        self.assertEqual(html.count("Coming soon"), 4)
+        self.assertEqual(html.count("Coming soon"), 5)
 
 
 class LinkRules(unittest.TestCase):
@@ -242,7 +242,7 @@ class BuiltPage(unittest.TestCase):
     def test_platforms_are_last_section_and_have_no_fake_downloads(self):
         self.assertEqual(self.page.order[-2:], ["download", "site-footer"])
         self.assertNotIn(">Download</a>", self.html)
-        self.assertEqual(self.html.count('data-status="comingSoon"'), 5)
+        self.assertEqual(self.html.count('data-status="comingSoon"'), 6)
 
     def test_images_have_alt_and_dimensions(self):
         for img in self.page.images:
@@ -337,7 +337,7 @@ class Consent(unittest.TestCase):
             build.load_config(env={"GTM_ID": "GTM-ABC\"><script>"})
 
     def test_csp_allows_gtm_hosts(self):
-        csp = (build.ROOT / "nginx" / "security-headers.inc").read_text(encoding="utf-8")
+        csp = (build.ROOT / "nginx" / "snippets" / "security-headers.inc").read_text(encoding="utf-8")
         self.assertIn("script-src 'self' https://*.googletagmanager.com", csp)
         self.assertIn("https://*.google-analytics.com", csp)
         self.assertNotIn("unsafe-inline", csp)
@@ -359,3 +359,109 @@ class Consent(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class EnvironmentVariants(unittest.TestCase):
+    """One image, two variants: dev is hidden from search and analytics; prod is canonical, with consent-gated GTM."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.dev_out, cls.dev_cfg, cls.dev, cls.dev_page = built(environment="dev")
+        cls.prod_out, cls.prod_cfg, cls.prod, cls.prod_page = built(environment="prod")
+
+    def test_dev_is_noindex_without_analytics(self):
+        self.assertEqual(self.dev_page.meta.get("robots"), "noindex, nofollow")
+        self.assertEqual((self.dev_out / "robots.txt").read_text(encoding="utf-8"), "User-agent: *\nDisallow: /\n")
+        self.assertFalse((self.dev_out / "sitemap.xml").exists())
+        self.assertNotIn("data-gtm-id", self.dev)
+        self.assertNotIn("googletagmanager", self.dev)
+        self.assertEqual(self.dev_page.meta["canonical"], "https://dev.alondra1.com/")
+
+    def test_dev_links_point_to_dev(self):
+        hrefs = [link.get("href", "") for link in self.dev_page.links]
+        self.assertIn("https://api.dev.alondra1.com/account/", hrefs)
+        self.assertFalse(any("://api.alondra1.com" in h or "://app.alondra1.com" in h for h in hrefs))
+
+    def test_prod_is_canonical_indexable_with_consent_gated_gtm(self):
+        self.assertNotIn("robots", self.prod_page.meta)
+        self.assertEqual(self.prod_page.meta["canonical"], "https://alondra1.com/")
+        self.assertIn("Sitemap: https://alondra1.com/sitemap.xml", (self.prod_out / "robots.txt").read_text(encoding="utf-8"))
+        self.assertIn('data-gtm-id="GTM-T6TDXTK3"', self.prod)
+        self.assertNotIn("googletagmanager.com/gtm.js", self.prod)  # loaded by consent.js only after Accept
+
+    def test_prod_never_names_a_dev_host(self):
+        self.assertNotIn("dev.alondra1.com", self.prod)
+        with self.assertRaises(build.ConfigError):
+            bad = copy.deepcopy(CONFIG)
+            bad["environments"]["prod"]["links"]["login"] = "https://api.dev.alondra1.com/account/"
+            path = Path(tempfile.mkdtemp()) / "site.json"
+            path.write_text(json.dumps(bad), encoding="utf-8")
+            build.load_config(path, env={}, environment="prod")
+
+    def test_dev_never_uses_a_prod_site_url(self):
+        bad = copy.deepcopy(CONFIG)
+        bad["environments"]["dev"]["siteUrl"] = "https://alondra1.com"
+        path = Path(tempfile.mkdtemp()) / "site.json"
+        path.write_text(json.dumps(bad), encoding="utf-8")
+        with self.assertRaises(build.ConfigError):
+            build.load_config(path, env={}, environment="dev")
+
+    def test_web_app_button_only_when_enabled(self):
+        self.assertNotIn("Open Web App", self.prod)
+        enabled = copy.deepcopy(CONFIG)
+        enabled["webApp"]["enabled"] = True
+        path = Path(tempfile.mkdtemp()) / "site.json"
+        path.write_text(json.dumps(enabled), encoding="utf-8")
+        cfg = build.load_config(path, env={}, environment="prod")
+        self.assertIn('href="https://app.alondra1.com/"', build.web_app_cta(cfg))
+
+    def test_cli_builds_both_variants(self):
+        out = Path(tempfile.mkdtemp()) / "dist"
+        self.assertEqual(build.main(["--out", str(out)]), 0)
+        self.assertTrue((out / "dev" / "index.html").exists() and (out / "prod" / "index.html").exists())
+
+
+class FourPlansAndPlatformLimits(unittest.TestCase):
+    def test_four_plans_paid_disabled_without_prices(self):
+        _, _, html, page = built(environment="prod")
+        self.assertEqual([p["id"] for p in CONFIG["plans"]], ["free", "personal", "family", "enterprise"])
+        for plan_id in ("personal", "family", "enterprise"):
+            self.assertIn(f'data-plan="{plan_id}"', html)
+        self.assertEqual(sum(1 for b in page.buttons if "disabled" in b), 3)
+        self.assertIsNone(re.search(r"[$€£]\s?\d", html), "no prices before owner approval")
+
+    def test_android_and_web_do_not_claim_mail_or_contacts(self):
+        for platform in CONFIG["platforms"]:
+            if platform["id"] != "windows":
+                self.assertNotIn("Mail", platform.get("modules", []))
+                self.assertNotIn("Contacts", platform.get("modules", []))
+        bad = copy.deepcopy(CONFIG)
+        bad["platforms"][2]["modules"] = ["To-do", "Mail"]
+        bad.pop("environments", None)
+        with self.assertRaises(build.ConfigError):
+            build.validate(bad)
+
+    def test_platform_limitations_are_stated(self):
+        _, _, html, _ = built(environment="prod")
+        self.assertIn("Mail and Contacts are in the Windows app.", html)
+
+
+class ServingConfig(unittest.TestCase):
+    """nginx serves the variant named by ALONDRA1_ENVIRONMENT; dev adds X-Robots-Tag in every location."""
+
+    def test_template_selects_the_variant(self):
+        template = (build.ROOT / "nginx" / "templates" / "default.conf.template").read_text(encoding="utf-8")
+        self.assertIn("root /usr/share/nginx/html/${ALONDRA1_ENVIRONMENT};", template)
+        locations = template.count("location ")
+        self.assertEqual(template.count("env-${ALONDRA1_ENVIRONMENT}.inc"), template.count("security-headers.inc"))
+        self.assertGreaterEqual(locations, 4)
+
+    def test_dev_headers_noindex(self):
+        dev = (build.ROOT / "nginx" / "snippets" / "env-dev.inc").read_text(encoding="utf-8")
+        self.assertIn('X-Robots-Tag "noindex, nofollow" always', dev)
+        self.assertNotIn("X-Robots-Tag", (build.ROOT / "nginx" / "snippets" / "env-prod.inc").read_text(encoding="utf-8"))
+
+    def test_entrypoint_refuses_unknown_environment(self):
+        script = (build.ROOT / "nginx" / "05-alondra1-environment.sh").read_text(encoding="utf-8")
+        self.assertIn("dev|prod)", script)
+        self.assertIn("exit 1", script)

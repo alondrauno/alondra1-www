@@ -8,15 +8,17 @@ Status of the landing page against the implementation spec (`ALONDRA1-LANDING-SP
 | --- | --- | --- |
 | Personal plan price and billing period | "Pricing coming soon"; **Upgrade to Personal** is a disabled button | Set `priceLabel`, `periodLabel`, `ctaUrl` (verified checkout or account page), `enabled: true` in `config/site.json`. |
 | Archive scope (what, retention, limits) | Labeled exactly "Archive" | Add detail only after the product owner confirms it. |
-| Log in / Register destinations | Hidden, together with **Create account** | Set `ALONDRA1_LOGIN_URL` and `ALONDRA1_REGISTER_URL` in shared-landing `envs/alondra1-www.env`, rebuild. The backend's email one-time-code API exists, but no web sign-in page does yet. |
-| Download destinations | All five platforms show "Coming soon"; **Get App** and **Get Started Free** scroll to `#download` | Mark a platform `available` with its official installer or store URL. Windows 1.3.0 exists but has no published release URL yet (alondra1-windows `release` workflow drafts one on a `v*` tag). |
+| Log in / Register destinations | Point to the backend account page of each environment (`https://api.<env>/account/`, email code sign-in) | Verify on dev once the backend runs there; change in `config/site.json` → `environments`. |
+| Download destinations | All six platforms show "Coming soon"; **Get App** and **Get Started Free** scroll to `#download` | Mark a platform `available` with its official installer or store URL. Windows 1.3.0 exists but has no published release URL yet (alondra1-windows `release` workflow drafts one on a `v*` tag). |
 | Tablet support | One "Tablet" card, "Coming soon", no "iPad / Android tablet" wording | Confirm support per OS; split the card's destinations if their statuses differ. |
 | macOS | "Coming soon" | No macOS scope is defined yet (alondra1-mac). Consider `notSupported` if it is not planned. |
 | Privacy, Terms, Contact | Not shown | Set the URLs; footer links appear automatically. A privacy policy that names Google Analytics / Tag Manager is needed now that analytics is on. |
 | Analytics consent | Done in code: banner with Accept/Decline, Consent Mode v2 defaults *denied*, GTM loads only after Accept, Cookie settings in the footer | Apply the container settings in README → *Settings inside the GTM container*, then check with Tag Assistant. Write the privacy policy (above) and set `PRIVACY_URL`; the banner then links to it. |
 | Real mobile screenshot | The phone shows a **concept** of a mobile to-do screen, built in HTML/CSS after the real dark Windows To-do UI (`data-concept="mobile-ui"`, alt text says "Illustration") | Replace with a real mobile screenshot once a mobile app exists. |
 | Reference images from the spec | `image.png` and the concept mockup were not provided; the design follows the official logo and the real app screenshots in alondra1-windows | None, unless you want closer alignment with the mockup. |
-| DNS | — | A/AAAA for `alondra1.com` and `www.alondra1.com` → the shared-landing host. |
+| Paid plans | Personal, Friends & Family, Enterprise shown, all disabled, no prices | Owner-approved prices and billing (backend BILLING_SPEC.md). |
+| Web app | **Open Web App** hidden; Web card "Coming soon" | Set `webApp.enabled` once the Web app is verified on that environment. |
+| DNS | — | Created by alondra1-infra's prod edge stack (proxied records to the landing tunnel); no shared-landing host. |
 
 ## Verified locally (2026-11-23)
 
@@ -34,7 +36,7 @@ Status of the landing page against the implementation spec (`ALONDRA1-LANDING-SP
 ## Not verified yet (needs Docker, the server, or DNS)
 
 - `docker build` and the container smoke test: run by the `ci` workflow (Docker is not installed on the development machine).
-- `docker compose config` with the new `alondra1-landing` service in shared-landing; first run is on the server or in CI.
+- `docker compose config` of `compose.yaml` and the first run on the dev landing server (alondra1-infra).
 - HTTPS for `alondra1.com`, the `www` → apex redirect, and certificate issuance: after DNS points at the host.
 - Container restart after a VM reboot: `restart: unless-stopped` is set; test once on the host.
 - Rollback: documented in the README; test once on the host.
@@ -45,7 +47,7 @@ Status of the landing page against the implementation spec (`ALONDRA1-LANDING-SP
 
 ## Launch order
 
-1. Push `alondra1-www` to `main` and make it cloneable by the server (`DEPLOY_GIT_TOKEN` or a public repository). Add the `DEPLOY_*` secrets to this repository.
-2. Merge the shared-landing change. Full deploys clone every site repository, so step 1 must come first or every site's deploy fails.
-3. Create the DNS records. Traefik requests the certificates on the first HTTPS request.
-4. Check `https://alondra1.com/`, `https://alondra1.com/healthz`, and `https://www.alondra1.com/` (→ permanent redirect to the apex).
+1. alondra1-infra provisions the dev landing server; a merge here deploys the dev variant; check `https://dev.alondra1.com/` (noindex, dev links, `/healthz`).
+2. Approve the prod infrastructure and the prod release of the same digest in alondra1-infra (`promote.yml`).
+3. The prod edge stack creates `alondra1.com` and `www.alondra1.com`; check `https://alondra1.com/`, `/healthz`, and `https://www.alondra1.com/` (→ permanent redirect to the apex).
+4. Clean up the old Alondra1 entries in shared-landing (alondra1-infra `docs/operations/shared-landing-migration.md`). Until then a full shared-landing deploy may rebuild a now unused `alondra1-landing` container, which exits because it has no `ALONDRA1_ENVIRONMENT`; no DNS points there, and other sites are not affected (`docker compose stop alondra1-landing` silences it).

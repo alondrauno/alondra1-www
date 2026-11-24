@@ -1,9 +1,11 @@
-# Alondra1 landing: static files on :8080 behind the shared Traefik (TLS and www -> apex happen there).
+# Alondra1 landing: static files on :8080 behind the Cloudflare Tunnel connector (TLS and www -> apex at the edge).
+# Rendered at container start from this template (nginx envsubst): ALONDRA1_ENVIRONMENT selects the variant built for
+# dev or prod; 05-alondra1-environment.sh refuses anything else.
 server {
   listen 8080;
   listen [::]:8080;
   server_name _;
-  root /usr/share/nginx/html;
+  root /usr/share/nginx/html/${ALONDRA1_ENVIRONMENT};
   index index.html;
 
   server_tokens off;
@@ -16,7 +18,8 @@ server {
   gzip_vary on;
   gzip_types text/css application/javascript image/svg+xml application/xml text/plain;
 
-  include /etc/nginx/conf.d/security-headers.inc;
+  include /etc/nginx/snippets/security-headers.inc;
+  include /etc/nginx/snippets/env-${ALONDRA1_ENVIRONMENT}.inc;
 
   location = /healthz {
     access_log off;
@@ -26,19 +29,22 @@ server {
 
   # Fingerprinted CSS/JS: safe to cache forever.
   location /assets/ {
-    include /etc/nginx/conf.d/security-headers.inc;
+    include /etc/nginx/snippets/security-headers.inc;
+    include /etc/nginx/snippets/env-${ALONDRA1_ENVIRONMENT}.inc;
     add_header Cache-Control "public, max-age=31536000, immutable" always;
     try_files $uri =404;
   }
 
   location /images/ {
-    include /etc/nginx/conf.d/security-headers.inc;
+    include /etc/nginx/snippets/security-headers.inc;
+    include /etc/nginx/snippets/env-${ALONDRA1_ENVIRONMENT}.inc;
     add_header Cache-Control "public, max-age=604800" always;
     try_files $uri =404;
   }
 
   location / {
-    include /etc/nginx/conf.d/security-headers.inc;
+    include /etc/nginx/snippets/security-headers.inc;
+    include /etc/nginx/snippets/env-${ALONDRA1_ENVIRONMENT}.inc;
     add_header Cache-Control "no-cache" always;
     try_files $uri $uri/ =404;
   }
