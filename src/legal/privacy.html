@@ -1,0 +1,91 @@
+<h1>Privacy policy</h1>
+<p class="legal-meta">Effective {{effectiveDate}}</p>
+
+<p>This policy explains what personal data Alondra1 processes, why, where, and for how long, and what rights you have.
+In short: the Alondra1 apps work on your device without an account. Data reaches our servers only when you sign in to
+use the optional cloud, and only what that feature needs. We do not sell data and do not show ads.</p>
+
+<h2 id="controller">1. Who is responsible</h2>
+<p>{{operatorName}}<br>{{operatorAddress}}<br>Email: <a href="mailto:{{privacyEmail}}">{{privacyEmail}}</a></p>
+<p>For any question about your data or to use your rights, write to <a href="mailto:{{privacyEmail}}">{{privacyEmail}}</a>.</p>
+
+<h2 id="apps">2. The apps on your device</h2>
+<p>To-do, Notes, Calendar, Mail and Contacts store their data on your device. Without signing in, none of it is sent
+to us. In the Windows app, Mail and Contacts connect directly from your device to the email and contacts providers you
+add (for example Microsoft or Google); those messages and contacts are not sent to Alondra1, except copies you choose to
+keep in the Mail Archive (section 4). The Web app keeps its data in your browser's storage on your device.</p>
+
+<h2 id="website">3. This website</h2>
+<h3>Delivery and security</h3>
+<p>When you visit this website or use the Web app, your browser sends technical data such as your IP address, the page
+requested, the time, and your browser's user agent. This is necessary to deliver the pages and protect them against
+abuse (legal basis: our legitimate interest in a secure, working website, Art. 6(1)(f) GDPR). The sites are served
+through Cloudflare (content delivery, DNS and protection against attacks) from servers of Hetzner Online GmbH in Germany.</p>
+
+<h3>Analytics, only with your consent</h3>
+<p>If, and only if, you choose <strong>Accept</strong> in the cookie banner, this website loads Google Tag Manager and
+Google Analytics 4 (Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Ireland) to measure how the site is
+used. Before you decide, and after you decline, no Google code is loaded and no request is sent to Google. Analytics
+sets the cookies <code>_ga</code> and <code>_ga_&lt;id&gt;</code> (kept for up to two years) and processes your
+shortened IP address, device and browser details and the pages you visit. Google may process data in the United States;
+transfers rely on the EU–US Data Privacy Framework and the European Commission's standard contractual clauses. Legal
+basis: your consent (Art. 6(1)(a) GDPR; § 25(1) TDDDG).</p>
+<p>Your choice is stored in your browser's local storage (<code>alondra1-consent</code>, not a cookie) for 12 months.
+You can change it at any time with <strong>Cookie settings</strong> at the bottom of every page; declining removes the
+analytics cookies. The development site (alondra1.dev) never uses analytics.</p>
+
+<h2 id="cloud">4. Account and cloud features</h2>
+<p>If you sign in, we process the following to provide the cloud features you use (legal basis: performance of our
+contract with you, Art. 6(1)(b) GDPR):</p>
+<ul>
+  <li><strong>Account:</strong> your email address, the time the account was created, and your spaces and their
+  members.</li>
+  <li><strong>Sign-in:</strong> one-time codes sent by email. We store only a keyed hash of each code; it is valid for
+  10 minutes and works once. Sign-ins, devices (the name and platform you or the app give them) and the time they were
+  last used. Rate limits use a keyed hash of your IP address, never the address itself.</li>
+  <li><strong>Cloud Sync:</strong> the tasks, lists, notes, note pictures, calendar events and settings you choose to
+  sync, so that they appear on your other devices.</li>
+  <li><strong>Mail Archive</strong> (paid plans): copies of the email messages you choose to archive, so you can search
+  them later.</li>
+  <li><strong>Plans:</strong> the plan of each space and any beta access we granted. There is no online payment yet;
+  if that changes, this policy will name the payment provider before it is used.</li>
+</ul>
+<p>Synced data is stored in a database on servers of Hetzner Online GmbH in Germany. Note pictures and archived
+messages are encrypted before they are stored, in Hetzner Object Storage in Germany. Data is encrypted in transit
+(TLS). The cloud is not end-to-end encrypted: our service can read synced data to provide the features, and only
+authorized operators may access it, for operating and securing the service.</p>
+<p>Sign-in codes and space invitations are sent by email through {{emailProvider}}. Technical logs record request
+types, timings and errors; they do not contain your content, sign-in codes, tokens or full email addresses.</p>
+
+<h2 id="retention">5. How long we keep data</h2>
+<ul>
+  <li>Synced items stay until you delete them. Notes in Trash are deleted for good after 30 days.</li>
+  <li>When you delete your account, your email address is removed at once and your sessions end; your content is
+  purged within 30 days. Deleted spaces are purged after 30 days.</li>
+  <li>Encrypted backups of the database and stored files are kept for up to 35 days, so deleted data disappears from
+  backups at the latest 35 days later.</li>
+  <li>Security and administration events (without content) are kept for one year.</li>
+  <li>Analytics data is kept according to the retention set in Google Analytics (at most 14 months).</li>
+</ul>
+
+<h2 id="recipients">6. Who processes data for us</h2>
+<p>We use these service providers, bound by data processing agreements:</p>
+<ul>
+  <li>Hetzner Online GmbH, Germany: servers, database storage, encrypted backups and object storage (in Germany).</li>
+  <li>Cloudflare, Inc., USA, and its EU affiliates: content delivery, DNS, protection against attacks, access control
+  for our administration pages, and storage of public configuration files (in the EU). Transfers rely on the EU–US Data
+  Privacy Framework and standard contractual clauses.</li>
+  <li>{{emailProvider}}: delivery of sign-in codes and invitations.</li>
+  <li>Google Ireland Limited: website analytics, only with your consent (section 3).</li>
+</ul>
+<p>We do not sell personal data, and we do not share it with anyone else unless the law requires it.</p>
+
+<h2 id="rights">7. Your rights</h2>
+<p>You have the right to access your data, to have it corrected or deleted, to restrict or object to processing, and
+to receive your data in a portable format (Art. 15–21 GDPR). In the apps you can export your data and delete your
+account yourself. Where processing is based on consent, you can withdraw it at any time with effect for the future.
+You also have the right to lodge a complaint with a supervisory authority, for example {{supervisoryAuthority}}.</p>
+
+<h2 id="changes">8. Changes</h2>
+<p>We will update this policy when the service changes, for example before a new provider or feature processes your
+data. The effective date above shows the current version.</p>

@@ -25,6 +25,17 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 CONFIG = ROOT / "config" / "site.json"
+LEGAL = ROOT / "config" / "legal.json"
+LEGAL_DIR = ROOT / "src" / "legal"
+# slug -> (page title, meta description). Each is built to /<slug>/index.html from src/legal/<slug>.html.
+LEGAL_PAGES = {
+    "privacy": ("Privacy policy", "What personal data Alondra1 processes, why, where, for how long, and your rights."),
+    "terms": ("Terms of use", "The terms for using the Alondra1 apps, website and cloud."),
+    "contact": ("Contact", "How to reach Alondra1, and the legal notice."),
+}
+LEGAL_FIELDS = ("operatorName", "operatorAddress", "contactEmail", "privacyEmail", "representative", "registerEntry",
+                "vatId", "supervisoryAuthority", "governingLaw", "emailProvider", "effectiveDate")
+PLACEHOLDER = re.compile(r"\[[A-Z][^\]]*\]")
 TEMPLATE = ROOT / "src" / "index.html"
 STATIC = ROOT / "src"  # styles.css, main.js
 PUBLIC = ROOT / "public"  # copied as-is
@@ -108,11 +119,14 @@ def validate(config: dict) -> None:
     web = config.get("webApp", {"enabled": False})
     if web.get("enabled") and environment != "local" and not config.get("webAppUrl", "").startswith("https://"):
         raise ConfigError("webApp.enabled needs an https webAppUrl for the environment")
-    if environment == "dev" and not config["siteUrl"].endswith("dev.alondra1.com"):
+    if environment == "dev" and not config["siteUrl"].endswith("alondra1.dev"):
         raise ConfigError("the dev variant must use a dev hostname")
+    def is_dev_name(value: str) -> bool:
+        return "alondra1.dev" in value or "dev.alondra1.com" in value  # dev zone, and the former dev names
+
     if environment == "prod" and (
-            "dev." in config["siteUrl"] or "dev." in config.get("webAppUrl", "")
-            or any("dev." in value for value in config["links"].values())):
+            is_dev_name(config["siteUrl"]) or is_dev_name(config.get("webAppUrl", ""))
+            or any(is_dev_name(value) for value in config["links"].values())):
         raise ConfigError("the prod variant must not contain a dev hostname")
     if config.get("gtmId") and not re.fullmatch(r"GTM-[A-Z0-9]{4,12}", config["gtmId"]):
         raise ConfigError(f"GTM_ID must look like GTM-XXXXXXX, got {config['gtmId']!r}")
@@ -474,8 +488,67 @@ def render(config: dict, css: str, js: str, year: int, analytics: str = "") -> s
     return re.sub(r"[ \t]+$", "", page, flags=re.MULTILINE)
 
 
-def build(out: Path, env: dict[str, str] | None = None, year: int | None = None, environment: str | None = None) -> dict:
+# ---------------------------------------------------------------------------------------------------------------
+# Privacy, Terms, Contact
+# ---------------------------------------------------------------------------------------------------------------
+
+def load_legal(path: Path = LEGAL) -> dict:
+    data = json.loads(path.read_text(encoding="utf-8"))
+    data.pop("$comment", None)
+    for key in LEGAL_FIELDS:
+        value = data.get(key)
+        if not isinstance(value, str) or not value.strip():
+            raise ConfigError(f"legal.{key} must be set (use a [PLACEHOLDER] until it is known)")
+        if key.endswith("Email") and not PLACEHOLDER.fullmatch(value) and not re.fullmatch(r"[^@\s<>\"]+@[^@\s<>\"]+\.[a-z]{2,}", value):
+            raise ConfigError(f"legal.{key} must be an email address, got {value!r}")
+    unknown = set(data) - set(LEGAL_FIELDS)
+    if unknown:
+        raise ConfigError(f"unknown legal fields: {', '.join(sorted(unknown))}")
+    return data
+
+
+def legal_placeholders(legal: dict) -> list[str]:
+    """Fields still holding a [PLACEHOLDER]."""
+    return [key for key in LEGAL_FIELDS if PLACEHOLDER.search(legal[key])]
+
+
+def render_legal(slug: str, config: dict, legal: dict, css: str, year: int, analytics: str, draft: bool) -> str:
+    def field(match: re.Match) -> str:
+        key = match.group(1)
+        if key not in legal:
+            raise KeyError(f"legal page {slug}: unknown field {{{{{key}}}}}")
+        return esc(legal[key])
+
+    body = re.sub(r"\{\{([a-z][A-Za-z]*)\}\}", field, (LEGAL_DIR / f"{slug}.html").read_text(encoding="utf-8"))
+    title, description = LEGAL_PAGES[slug]
+    notice = ('<p class="legal-draft" role="note"><strong>Draft.</strong> Details shown [in brackets] are not filled in '
+              'yet, and the text still needs legal review. This page is not published on alondra1.com until then.</p>'
+              if draft else "")
+    values = {
+        "TITLE": esc(title), "DESCRIPTION": esc(description), "ROBOTS_META": robots_meta(config),
+        "SITE_URL": esc(config["siteUrl"]), "PATH": f"/{slug}/", "CSS": css, "ANALYTICS": analytics,
+        "DRAFT_NOTICE": notice, "BODY": body, "FOOTER_LINKS": footer_links(config), "YEAR": str(year),
+        "COOKIE_SETTINGS": cookie_settings(config), "CONSENT_BANNER": consent_banner(config),
+    }
+    page = re.sub(r"\{\{\s*([A-Z0-9_]+)\s*\}\}", lambda m: values[m.group(1)], (LEGAL_DIR / "page.html").read_text(encoding="utf-8"))
+    return re.sub(r"[ \t]+$", "", page, flags=re.MULTILINE)
+
+
+def build(out: Path, env: dict[str, str] | None = None, year: int | None = None, environment: str | None = None,
+          legal_path: Path = LEGAL) -> dict:
     config = load_config(env=env, environment=environment)
+    legal = load_legal(legal_path)
+    missing = legal_placeholders(legal)
+    # Drafts are shown on dev and in local builds. Prod publishes the pages only when every detail is filled in, and
+    # without a published privacy policy it does not load analytics at all.
+    publish_legal = not missing or environment != "prod"
+    if publish_legal:
+        for slug in LEGAL_PAGES:
+            if not config["links"][slug]:
+                config["links"][slug] = f"/{slug}/"
+    elif config.get("gtmId"):
+        config["gtmId"] = ""
+        print(f"note: prod analytics off until config/legal.json is complete (missing: {', '.join(missing)})", file=sys.stderr)
     if out.exists():
         shutil.rmtree(out)
     shutil.copytree(PUBLIC, out)
@@ -484,6 +557,15 @@ def build(out: Path, env: dict[str, str] | None = None, year: int | None = None,
     year = year or _dt.date.today().year
     analytics = analytics_tags(config, out)
     (out / "index.html").write_text(render(config, css, js, year, analytics), encoding="utf-8", newline="\n")
+    legal_paths = []
+    if publish_legal:
+        for slug in LEGAL_PAGES:
+            if config["links"][slug] != f"/{slug}/":
+                continue  # an external page is configured for this link
+            (out / slug).mkdir(parents=True, exist_ok=True)
+            (out / slug / "index.html").write_text(render_legal(slug, config, legal, css, year, analytics, bool(missing)),
+                                                   encoding="utf-8", newline="\n")
+            legal_paths.append(f"/{slug}/")
 
     site = config["siteUrl"]
     if config["noindex"]:
@@ -496,7 +578,8 @@ def build(out: Path, env: dict[str, str] | None = None, year: int | None = None,
             '<?xml version="1.0" encoding="UTF-8"?>\n'
             '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
             f"  <url><loc>{site}/</loc></url>\n"
-            "</urlset>\n", encoding="utf-8", newline="\n")
+            + "".join(f"  <url><loc>{site}{path}</loc></url>\n" for path in legal_paths)
+            + "</urlset>\n", encoding="utf-8", newline="\n")
     not_found = (ROOT / "src" / "404.html").read_text(encoding="utf-8").replace("{{CSS}}", css)
     (out / "404.html").write_text(not_found, encoding="utf-8", newline="\n")
 

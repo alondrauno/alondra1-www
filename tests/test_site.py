@@ -67,13 +67,90 @@ class Page(HTMLParser):
             self.title += data
 
 
-def built(env=None, environment=None):
+# Operator details as they will look once the owner has filled in config/legal.json (test values only).
+COMPLETE_LEGAL = {
+    "operatorName": "Example Operator", "operatorAddress": "Example Street 1, 10115 Berlin, Germany",
+    "contactEmail": "hello@example.com", "privacyEmail": "privacy@example.com", "representative": "Alex Example",
+    "registerEntry": "not registered", "vatId": "none", "supervisoryAuthority": "the Berlin Commissioner for Data Protection",
+    "governingLaw": "Germany", "emailProvider": "Example Mail GmbH", "effectiveDate": "1 December 2026",
+}
+
+
+def legal_file(data):
+    path = Path(tempfile.mkdtemp(prefix="alondra1-legal-")) / "legal.json"
+    path.write_text(json.dumps(data), encoding="utf-8")
+    return path
+
+
+def built(env=None, environment=None, legal=None):
     out = Path(tempfile.mkdtemp(prefix="alondra1-www-")) / "dist"
-    cfg = build.build(out, env=env or {}, year=2026, environment=environment)
+    cfg = build.build(out, env=env or {}, year=2026, environment=environment,
+                      **({"legal_path": legal_file(legal)} if legal is not None else {}))
     html = (out / "index.html").read_text(encoding="utf-8")
     page = Page()
     page.feed(html)
     return out, cfg, html, page
+
+
+class LegalPages(unittest.TestCase):
+    """Privacy, Terms and Contact: drafts on dev; on prod only when complete, and analytics only with a privacy policy."""
+
+    def page(self, out, slug):
+        return (out / slug / "index.html").read_text(encoding="utf-8")
+
+    def test_committed_legal_file_is_valid(self):
+        legal = build.load_legal()
+        self.assertEqual(set(legal), set(build.LEGAL_FIELDS))
+
+    def test_dev_shows_drafts_with_notice_and_footer_links(self):
+        out, cfg, html, page = built(environment="dev", legal={k: f"[{k.upper()}]" for k in build.LEGAL_FIELDS})
+        hrefs = [a.get("href") for a in page.links]
+        for slug in ("privacy", "terms", "contact"):
+            self.assertIn(f"/{slug}/", hrefs)
+            text = self.page(out, slug)
+            self.assertIn('class="legal-draft"', text)
+            self.assertIn('content="noindex, nofollow"', text)
+
+    def test_prod_with_placeholders_publishes_no_pages_and_no_analytics(self):
+        legal = dict(COMPLETE_LEGAL, operatorName="[OPERATOR LEGAL NAME]")
+        out, cfg, html, page = built(environment="prod", legal=legal)
+        for slug in ("privacy", "terms", "contact"):
+            self.assertFalse((out / slug).exists())
+        self.assertNotIn("data-gtm-id", html)
+        self.assertNotIn("/privacy/", (out / "sitemap.xml").read_text(encoding="utf-8"))
+
+    def test_prod_complete_publishes_pages_links_sitemap_and_consent_link(self):
+        out, cfg, html, page = built(environment="prod", legal=COMPLETE_LEGAL)
+        hrefs = [a.get("href") for a in page.links]
+        sitemap = (out / "sitemap.xml").read_text(encoding="utf-8")
+        for slug in ("privacy", "terms", "contact"):
+            self.assertIn(f"/{slug}/", hrefs)
+            self.assertIn(f"<loc>https://alondra1.com/{slug}/</loc>", sitemap)
+            text = self.page(out, slug)
+            self.assertNotIn("legal-draft", text)
+            self.assertIsNone(build.PLACEHOLDER.search(text), f"{slug} still has a placeholder")
+            self.assertIn(f'<link rel="canonical" href="https://alondra1.com/{slug}/">', text)
+        banner = html[html.index('id="consent"'):]
+        self.assertIn('href="/privacy/"', banner)
+
+    def test_privacy_policy_names_what_the_product_does(self):
+        out, *_ = built(environment="prod", legal=COMPLETE_LEGAL)
+        text = self.page(out, "privacy")
+        for fact in ("Google Analytics", "only with your consent", "_ga", "alondra1-consent", "Cookie settings",
+                     "Hetzner Online GmbH", "Cloudflare", "Example Mail GmbH", "35 days", "30 days",
+                     "not end-to-end encrypted", "privacy@example.com", "Berlin Commissioner"):
+            self.assertIn(fact, text)
+        contact = self.page(out, "contact")
+        for fact in ("Example Operator", "Example Street 1", "hello@example.com", "Alex Example"):
+            self.assertIn(fact, contact)
+
+    def test_values_are_escaped_and_emails_checked(self):
+        out, *_ = built(environment="dev", legal=dict(COMPLETE_LEGAL, operatorName="A <b>&</b> Co"))
+        self.assertIn("A &lt;b&gt;&amp;&lt;/b&gt; Co", self.page(out, "contact"))
+        with self.assertRaises(build.ConfigError):
+            built(environment="dev", legal=dict(COMPLETE_LEGAL, contactEmail="not an email"))
+        with self.assertRaises(build.ConfigError):
+            built(environment="dev", legal=dict(COMPLETE_LEGAL, unexpected="x"))
 
 
 class PlanRules(unittest.TestCase):
@@ -367,7 +444,7 @@ class EnvironmentVariants(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.dev_out, cls.dev_cfg, cls.dev, cls.dev_page = built(environment="dev")
-        cls.prod_out, cls.prod_cfg, cls.prod, cls.prod_page = built(environment="prod")
+        cls.prod_out, cls.prod_cfg, cls.prod, cls.prod_page = built(environment="prod", legal=COMPLETE_LEGAL)
 
     def test_dev_is_noindex_without_analytics(self):
         self.assertEqual(self.dev_page.meta.get("robots"), "noindex, nofollow")
@@ -375,11 +452,11 @@ class EnvironmentVariants(unittest.TestCase):
         self.assertFalse((self.dev_out / "sitemap.xml").exists())
         self.assertNotIn("data-gtm-id", self.dev)
         self.assertNotIn("googletagmanager", self.dev)
-        self.assertEqual(self.dev_page.meta["canonical"], "https://dev.alondra1.com/")
+        self.assertEqual(self.dev_page.meta["canonical"], "https://alondra1.dev/")
 
     def test_dev_links_point_to_dev(self):
         hrefs = [link.get("href", "") for link in self.dev_page.links]
-        self.assertIn("https://api.dev.alondra1.com/account/", hrefs)
+        self.assertIn("https://api.alondra1.dev/account/", hrefs)
         self.assertFalse(any("://api.alondra1.com" in h or "://app.alondra1.com" in h for h in hrefs))
 
     def test_prod_is_canonical_indexable_with_consent_gated_gtm(self):
@@ -390,10 +467,10 @@ class EnvironmentVariants(unittest.TestCase):
         self.assertNotIn("googletagmanager.com/gtm.js", self.prod)  # loaded by consent.js only after Accept
 
     def test_prod_never_names_a_dev_host(self):
-        self.assertNotIn("dev.alondra1.com", self.prod)
+        self.assertNotIn("alondra1.dev", self.prod)
         with self.assertRaises(build.ConfigError):
             bad = copy.deepcopy(CONFIG)
-            bad["environments"]["prod"]["links"]["login"] = "https://api.dev.alondra1.com/account/"
+            bad["environments"]["prod"]["links"]["login"] = "https://api.alondra1.dev/account/"
             path = Path(tempfile.mkdtemp()) / "site.json"
             path.write_text(json.dumps(bad), encoding="utf-8")
             build.load_config(path, env={}, environment="prod")

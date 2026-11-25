@@ -30,7 +30,7 @@ jobs:
         with:
           node-version: "22"
       - name: Validate HTML
-        run: npx --yes html-validate@9 dist/dev/index.html dist/dev/404.html dist/prod/index.html dist/prod/404.html
+        run: npx --yes html-validate@9 dist/dev/index.html dist/dev/404.html dist/dev/privacy/index.html dist/dev/terms/index.html dist/dev/contact/index.html dist/prod/index.html dist/prod/404.html
       - name: Check links (built site and Markdown; local files only)
         uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2
         with:
@@ -56,7 +56,7 @@ jobs:
           test "$(curl -fsS http://127.0.0.1:8080/healthz)" = "ok"
           curl -fsS http://127.0.0.1:8080/ | grep -q 'Organize your day.'
           curl -fsS http://127.0.0.1:8080/ | grep -q '<link rel="canonical" href="https://alondra1.com/">'
-          curl -fsS http://127.0.0.1:8081/ | grep -q '<link rel="canonical" href="https://dev.alondra1.com/">'
+          curl -fsS http://127.0.0.1:8081/ | grep -q '<link rel="canonical" href="https://alondra1.dev/">'
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/missing)" = 404
           prod="$(curl -fsSI http://127.0.0.1:8080/)"; dev="$(curl -fsSI http://127.0.0.1:8081/)"
           echo "$prod" | grep -qi '^content-security-policy:'

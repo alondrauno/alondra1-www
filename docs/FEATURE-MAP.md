@@ -59,7 +59,9 @@ Tests are in `tests/` (`python -m unittest discover -s tests -t .`), run by CI a
 | --- | --- | --- | --- |
 | NAV-MENU-01 | Mobile menu: focus handling, Escape, click outside; header state on scroll | Done | `src/main.js`. |
 | NAV-ACC-01 | **Log in**, **Register**, **Create account** to the backend account page of the environment | Done | Verify on dev once the backend runs there. |
-| NAV-FOOT-01 | Footer links Privacy, Terms, Contact, each shown only when set; footer year | Waiting | URLs not set yet. |
+| NAV-FOOT-01 | Footer links Privacy, Terms, Contact, each shown only when set; footer year | Done | Point to the site's own pages unless an external URL is configured. |
+| LEGAL-01 | Privacy policy, Terms of use, Contact and legal notice pages (`/privacy/`, `/terms/`, `/contact/`) from `src/legal/` and `config/legal.json` | Waiting | Drafts with `[PLACEHOLDERS]` on dev (with a Draft notice); prod publishes them only when complete. Need owner details and legal review ([LAUNCH.md](LAUNCH.md)). |
+| LEGAL-02 | No analytics without a published privacy policy: prod turns Google Tag Manager off while `config/legal.json` has placeholders | Done | Test-enforced (`LegalPages`). |
 | NAV-LINK-01 | Only `https://`, `mailto:`, `/path` or `#anchor` links; the build fails otherwise | Done | |
 
 ## 5. Analytics and consent (`GTM`)

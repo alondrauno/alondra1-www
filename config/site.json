@@ -10,17 +10,17 @@
   },
   "environments": {
     "dev": {
-      "siteUrl": "https://dev.alondra1.com",
+      "siteUrl": "https://alondra1.dev",
       "noindex": true,
       "gtmId": "",
       "links": {
-        "login": "https://api.dev.alondra1.com/account/",
-        "register": "https://api.dev.alondra1.com/account/",
+        "login": "https://api.alondra1.dev/account/",
+        "register": "https://api.alondra1.dev/account/",
         "privacy": "",
         "terms": "",
         "contact": ""
       },
-      "webAppUrl": "https://app.dev.alondra1.com/"
+      "webAppUrl": "https://app.alondra1.dev/"
     },
     "prod": {
       "siteUrl": "https://alondra1.com",

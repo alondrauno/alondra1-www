@@ -4,7 +4,7 @@
 
 [![ci](https://github.com/alondrauno/alondra1-www/actions/workflows/ci.yml/badge.svg)](https://github.com/alondrauno/alondra1-www/actions/workflows/ci.yml)
 
-The one-page marketing site for **alondra1.com**: a personal to-do app first, with Mail, Calendar, Notes, and Contacts included free, and paid plans that add cloud sync, archive and shared spaces. It is a static site built by a small standard-library Python script and served by unprivileged nginx in its own container. One image contains a `dev` and a `prod` variant; [alondra1-infra](https://github.com/alondrauno/alondra1-infra) deploys it on its own landing server per environment (dev.alondra1.com, alondra1.com) behind Cloudflare.
+The one-page marketing site for **alondra1.com**: a personal to-do app first, with Mail, Calendar, Notes, and Contacts included free, and paid plans that add cloud sync, archive and shared spaces. It is a static site built by a small standard-library Python script and served by unprivileged nginx in its own container. One image contains a `dev` and a `prod` variant; [alondra1-infra](https://github.com/alondrauno/alondra1-infra) deploys it on its own landing server per environment (alondra1.dev, alondra1.com) behind Cloudflare.
 
 | Mobile (375 px) | Desktop (1440 px) |
 | --- | --- |
@@ -55,8 +55,9 @@ Everything is in `config/site.json` and reviewed in pull requests; nothing here 
 
 | Setting | Effect |
 | --- | --- |
-| `environments.<env>.siteUrl` | Canonical URL, Open Graph URLs, sitemap (`https://dev.alondra1.com`, `https://alondra1.com`). The dev variant must use a dev hostname; the prod variant may not name one. |
-| `environments.<env>.links` | **Log in**, **Register** and **Create account** (the backend account page of that environment), and the footer links Privacy, Terms, Contact (each shown only when set). |
+| `environments.<env>.siteUrl` | Canonical URL, Open Graph URLs, sitemap (`https://alondra1.dev`, `https://alondra1.com`). The dev variant must use a dev hostname; the prod variant may not name one. |
+| `environments.<env>.links` | **Log in**, **Register** and **Create account** (the backend account page of that environment), and the footer links Privacy, Terms, Contact (empty = the site's own `/privacy/`, `/terms/`, `/contact/` pages; an `https://` URL overrides). |
+| `config/legal.json` | Operator details for the Privacy, Terms and Contact pages (`src/legal/*.html`). Replace every `[PLACEHOLDER]`; until then the prod variant publishes neither the pages nor Google Analytics, and dev shows them as drafts. |
 | `environments.<env>.noindex` | dev: `noindex` meta tag, `robots.txt` with `Disallow: /`, no sitemap, and `X-Robots-Tag` from nginx. |
 | `environments.<env>.gtmId` | Google Tag Manager, prod only (`GTM-T6TDXTK3`), loaded only after consent. Never in a noindex variant. |
 | `environments.<env>.webAppUrl`, `webApp.enabled` | **Open Web App** button, shown only once the Web app is verified (`enabled: true`). |

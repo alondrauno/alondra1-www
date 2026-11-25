@@ -1,0 +1,14 @@
+{
+  "$comment": "Operator details for the Privacy, Terms and Contact pages (/privacy/, /terms/, /contact/). Values in [BRACKETS] are placeholders the owner must replace; the texts are drafts that need legal review before launch. While any placeholder remains, the prod variant publishes neither these pages nor Google Analytics (analytics needs a published privacy policy); the dev variant shows the drafts with a 'Draft' notice. See docs/LAUNCH.md.",
+  "operatorName": "[OPERATOR LEGAL NAME]",
+  "operatorAddress": "[STREET AND NUMBER, POSTCODE CITY, COUNTRY]",
+  "contactEmail": "[CONTACT EMAIL ADDRESS]",
+  "privacyEmail": "[PRIVACY CONTACT EMAIL ADDRESS]",
+  "representative": "[NAME OF THE PERSON AUTHORIZED TO REPRESENT THE OPERATOR]",
+  "registerEntry": "[COMMERCIAL REGISTER AND NUMBER, OR 'not registered']",
+  "vatId": "[VAT ID, OR 'none']",
+  "supervisoryAuthority": "[DATA PROTECTION SUPERVISORY AUTHORITY OF THE OPERATOR'S COUNTRY]",
+  "governingLaw": "[COUNTRY WHOSE LAW GOVERNS THE TERMS]",
+  "emailProvider": "[EMAIL DELIVERY PROVIDER THAT SENDS SIGN-IN CODES]",
+  "effectiveDate": "[EFFECTIVE DATE, e.g. 1 December 2026]"
+}
