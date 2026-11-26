@@ -492,6 +492,29 @@ class EnvironmentVariants(unittest.TestCase):
         cfg = build.load_config(path, env={}, environment="prod")
         self.assertIn('href="https://app.alondra1.com/"', build.web_app_cta(cfg))
 
+    def test_dev_is_labelled_as_the_development_and_test_version(self):
+        self.assertIn('class="env-banner"', self.dev)
+        self.assertIn("Development and test version", self.dev)
+        self.assertNotIn("env-banner", self.prod)
+
+    def test_dev_opens_the_dev_web_app_and_prod_does_not_inherit_it(self):
+        self.assertIn('href="https://app.alondra1.dev/"', build.web_app_cta(self.dev_cfg))
+        web = next(p for p in self.dev_cfg["platforms"] if p["id"] == "web")
+        self.assertEqual((web["status"], web["downloadUrl"]), ("available", "https://app.alondra1.dev/"))
+        self.assertIn('aria-label="Open the Alondra1 Web app"', self.dev)
+        self.assertNotIn("Open Web App", self.prod)
+        self.assertTrue(all(p["status"] != "available" for p in self.prod_cfg["platforms"]))
+        # Apps without a verified download stay "coming soon" on dev too.
+        self.assertTrue(all(p["status"] == "comingSoon" for p in self.dev_cfg["platforms"] if p["id"] in ("macos", "ios", "tablet")))
+
+    def test_environment_platform_overrides_are_validated(self):
+        bad = copy.deepcopy(CONFIG)
+        bad["environments"]["dev"]["platforms"] = {"android": {"status": "available"}}  # no download URL
+        path = Path(tempfile.mkdtemp()) / "site.json"
+        path.write_text(json.dumps(bad), encoding="utf-8")
+        with self.assertRaises(build.ConfigError):
+            build.load_config(path, env={}, environment="dev")
+
     def test_cli_builds_both_variants(self):
         out = Path(tempfile.mkdtemp()) / "dist"
         self.assertEqual(build.main(["--out", str(out)]), 0)

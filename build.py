@@ -82,6 +82,17 @@ def load_config(path: Path = CONFIG, env: dict[str, str] | None = None, environm
         config["noindex"] = bool(overlay["noindex"])
         config["webAppUrl"] = overlay.get("webAppUrl", "")
         gtm_default = overlay.get("gtmId", "")
+        # Per-environment facts: the Web app button and platform availability (a download verified on dev is not
+        # thereby available in prod).
+        if "webApp" in overlay:
+            config["webApp"] = {**config.get("webApp", {}), **overlay["webApp"]}
+        for platform in config["platforms"]:
+            change = overlay.get("platforms", {}).get(platform["id"])
+            if change:
+                unknown = set(change) - {"status", "downloadUrl", "subtitle", "note"}
+                if unknown:
+                    raise ConfigError(f"environments.{environment}.platforms.{platform['id']}: unknown fields {sorted(unknown)}")
+                platform.update(change)
     if env.get("SITE_URL"):
         config["siteUrl"] = env["SITE_URL"]
     for key, var in LINK_ENV.items():
@@ -386,7 +397,10 @@ def platforms_html(config: dict) -> str:
         subtitle = f'<span class="platform-sub">{esc(p["subtitle"])}</span>' if p.get("subtitle") else ""
         if p.get("modules"):
             subtitle += f'<span class="platform-modules">{esc(", ".join(p["modules"]))}</span>'
-        if status == "available":
+        if status == "available" and p["id"] == "web":
+            action = (f'<a class="button button--primary button--sm" {link_attrs(p["downloadUrl"])} '
+                      f'aria-label="Open the Alondra1 Web app">Open</a>')
+        elif status == "available":
             action = (f'<a class="button button--primary button--sm" {link_attrs(p["downloadUrl"])} '
                       f'aria-label="Download Alondra1 for {esc(p["label"])}">Download</a>')
         else:
@@ -453,6 +467,15 @@ def cookie_settings(config: dict) -> str:
     return '<button class="footer-button" type="button" data-consent-settings hidden>Cookie settings</button>'
 
 
+def env_banner(config: dict) -> str:
+    """Dev is the development and test version: say so on every view, and that it is not a finished service."""
+    if config.get("environment") != "dev":
+        return ""
+    return ('<div class="env-banner" role="note"><strong>Development and test version.</strong> '
+            'This is where Alondra1 is built and tested, not a finished commercial service. '
+            'Use it with test data; features and data may change.</div>')
+
+
 def render(config: dict, css: str, js: str, year: int, analytics: str = "") -> str:
     page = TEMPLATE.read_text(encoding="utf-8")
     values = {
@@ -466,6 +489,7 @@ def render(config: dict, css: str, js: str, year: int, analytics: str = "") -> s
         "SECONDARY_CTA": secondary_cta(config),
         "WEB_APP_CTA": web_app_cta(config),
         "ROBOTS_META": robots_meta(config),
+        "ENV_BANNER": env_banner(config),
         "PLANS_NOTE": plans_note(config),
         "HERO_PHONE": phone("myday", "Illustration of the Alondra1 mobile to-do app showing My Day with four personal tasks"),
         "SHOWCASE_PHONE": phone("groceries", "Illustration of the Alondra1 mobile to-do app showing a groceries list", "md"),

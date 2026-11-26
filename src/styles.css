@@ -774,3 +774,6 @@ a { color: var(--primary); }
 .legal-details dt { color: var(--muted); }
 .legal-details dd { margin: 0; overflow-wrap: anywhere; }
 .legal-draft { background: var(--peach-soft); border: 1px solid var(--peach); border-radius: 12px; padding: var(--s3) var(--s4); margin-bottom: var(--s5); }
+
+/* Dev variant only: the development and test version says so on every view. */
+.env-banner { background: var(--peach-soft); border-bottom: 1px solid var(--peach); padding: var(--s2) var(--s4); text-align: center; font-size: 0.9rem; }

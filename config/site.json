@@ -20,7 +20,16 @@
         "terms": "",
         "contact": ""
       },
-      "webAppUrl": "https://app.alondra1.dev/"
+      "webAppUrl": "https://app.alondra1.dev/",
+      "webApp": {
+        "enabled": true
+      },
+      "platforms": {
+        "web": {
+          "status": "available",
+          "downloadUrl": "https://app.alondra1.dev/"
+        }
+      }
     },
     "prod": {
       "siteUrl": "https://alondra1.com",
