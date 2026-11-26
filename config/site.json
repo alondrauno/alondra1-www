@@ -21,6 +21,7 @@
         "contact": ""
       },
       "webAppUrl": "https://app.alondra1.dev/",
+      "feedbackUrl": "https://github.com/alondrauno/alondra1-www/issues/new/choose",
       "webApp": {
         "enabled": true
       },

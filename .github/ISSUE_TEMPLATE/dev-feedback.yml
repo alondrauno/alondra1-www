@@ -1,0 +1,32 @@
+name: Dev feedback
+description: A problem or an idea from the Alondra1 Dev (test) version.
+labels: [dev-feedback]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for testing Alondra1. **This page is public.** Do not include personal data, email addresses,
+        sign-in codes, or screenshots that show private tasks, notes or mail.
+  - type: dropdown
+    id: app
+    attributes:
+      label: Where
+      options: [Web app, Windows app, Android app, Landing page, Account page]
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: App version
+      description: Shown in the app's Settings, under About (for example "1.4.0 (dev)").
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, or what you would like
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to see it
+      description: Optional. What you did, what you expected, what you saw instead.

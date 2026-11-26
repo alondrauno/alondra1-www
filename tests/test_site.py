@@ -497,6 +497,23 @@ class EnvironmentVariants(unittest.TestCase):
         self.assertIn("Development and test version", self.dev)
         self.assertNotIn("env-banner", self.prod)
 
+    def test_dev_explains_the_test_version_and_links_feedback(self):
+        # Dev-only spec WWW-02: local-first, optional Cloud Sync, sign-in codes, test plans, data handling, feedback.
+        for text in ("Works without an account", "six-digit code", "Cloud Sync is optional", "test plan", "35 days",
+                     "delete your account", "Windows app only", "never include personal data"):
+            self.assertIn(text, self.dev)
+        feedback = "https://github.com/alondrauno/alondra1-www/issues/new/choose"
+        self.assertEqual(self.dev_cfg["feedbackUrl"], feedback)
+        self.assertIn(f'href="{feedback}"', build.footer_links(self.dev_cfg))
+        self.assertNotIn('id="test-version"', self.prod)
+        self.assertNotIn("Feedback", build.footer_links(self.prod_cfg))
+
+    def test_feedback_url_must_be_https(self):
+        cfg = copy.deepcopy(self.dev_cfg)
+        cfg["feedbackUrl"] = "http://example.com/"
+        with self.assertRaises(build.ConfigError):
+            build.validate(cfg)
+
     def test_dev_opens_the_dev_web_app_and_prod_does_not_inherit_it(self):
         self.assertIn('href="https://app.alondra1.dev/"', build.web_app_cta(self.dev_cfg))
         web = next(p for p in self.dev_cfg["platforms"] if p["id"] == "web")

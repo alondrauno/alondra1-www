@@ -72,6 +72,7 @@ def load_config(path: Path = CONFIG, env: dict[str, str] | None = None, environm
     config["environment"] = environment or "local"
     config["noindex"] = False
     config["webAppUrl"] = ""
+    config["feedbackUrl"] = ""
     gtm_default = ""
     if environment is not None:
         if environment not in ENVIRONMENTS or environment not in environments:
@@ -81,6 +82,8 @@ def load_config(path: Path = CONFIG, env: dict[str, str] | None = None, environm
         config["links"] = dict(overlay["links"])
         config["noindex"] = bool(overlay["noindex"])
         config["webAppUrl"] = overlay.get("webAppUrl", "")
+        # Where testers report problems and ideas (dev: the public GitHub issues of this repository).
+        config["feedbackUrl"] = overlay.get("feedbackUrl", "")
         gtm_default = overlay.get("gtmId", "")
         # Per-environment facts: the Web app button and platform availability (a download verified on dev is not
         # thereby available in prod).
@@ -116,6 +119,9 @@ def is_valid_link(value: str) -> bool:
 
 
 def validate(config: dict) -> None:
+    feedback = config.get("feedbackUrl", "")
+    if feedback and not feedback.startswith("https://"):
+        raise ConfigError(f"feedbackUrl must be an https URL, got {feedback!r}")
     site = config.get("siteUrl", "")
     if not re.fullmatch(r"https://[a-z0-9.-]+", site):
         raise ConfigError(f"siteUrl must be an https origin without a trailing slash, got {site!r}")
@@ -417,6 +423,8 @@ def footer_links(config: dict) -> str:
     links = config["links"]
     items = [(label, links[key]) for key, label in (("privacy", "Privacy"), ("terms", "Terms"), ("contact", "Contact"))
              if links[key]]
+    if config.get("feedbackUrl"):
+        items.append(("Feedback", config["feedbackUrl"]))
     return "".join(f'<li><a {link_attrs(url)}>{label}</a></li>' for label, url in items)
 
 
@@ -476,6 +484,45 @@ def env_banner(config: dict) -> str:
             'Use it with test data; features and data may change.</div>')
 
 
+def dev_notes(config: dict) -> str:
+    """Dev only (Dev-only spec WWW-02): what testers need to know, stated plainly and truthfully."""
+    if config.get("environment") != "dev":
+        return ""
+    login = config["links"].get("login", "")
+    account = f'<a {link_attrs(login)}>account page</a>' if login else "account page"
+    feedback = config.get("feedbackUrl", "")
+    report = (f'<a {link_attrs(feedback)}>Report a problem or an idea</a> on GitHub. Reports there are public: describe '
+              'what happened and which app and version you used, but never include personal data, sign-in codes or '
+              'screenshots of private content.') if feedback else "Feedback by email is not set up yet."
+    items = [
+        ("Works without an account",
+         "Tasks, lists, reminders and notes are kept on your device and work offline. No sign-in is needed."),
+        ("Cloud Sync is optional",
+         "Sign in with a six-digit code sent to your email address, then turn on Cloud Sync for a space. Nothing is "
+         "uploaded before you do. Mail and Contacts are in the Windows app only, and Cloud Sync does not upload them."),
+        ("Test plans",
+         "Cloud Sync needs a plan. In this test version there is no payment: the developer grants a time-limited test "
+         "plan on request."),
+        ("Your test data",
+         "Synced data is stored on the Alondra1 Dev server in Germany and kept across updates. Encrypted backups are "
+         f"kept on that server for 35 days. Use test data, not sensitive information. You can delete your account on the {account}; "
+         "the data in the apps on your devices stays there."),
+        ("Feedback", report),
+    ]
+    rows = "\n".join(f'          <li class="feature-card"><h3>{esc(title)}</h3><p>{text}</p></li>' for title, text in items)
+    return f"""<section class="section section--tint" id="test-version" aria-labelledby="test-title">
+      <div class="container">
+        <div class="section-head">
+          <p class="eyebrow">Development and test version</p>
+          <h2 id="test-title">Before you try it</h2>
+        </div>
+        <ul class="feature-grid">
+{rows}
+        </ul>
+      </div>
+    </section>"""
+
+
 def render(config: dict, css: str, js: str, year: int, analytics: str = "") -> str:
     page = TEMPLATE.read_text(encoding="utf-8")
     values = {
@@ -490,6 +537,7 @@ def render(config: dict, css: str, js: str, year: int, analytics: str = "") -> s
         "WEB_APP_CTA": web_app_cta(config),
         "ROBOTS_META": robots_meta(config),
         "ENV_BANNER": env_banner(config),
+        "DEV_NOTES": dev_notes(config),
         "PLANS_NOTE": plans_note(config),
         "HERO_PHONE": phone("myday", "Illustration of the Alondra1 mobile to-do app showing My Day with four personal tasks"),
         "SHOWCASE_PHONE": phone("groceries", "Illustration of the Alondra1 mobile to-do app showing a groceries list", "md"),
