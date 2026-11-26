@@ -504,6 +504,12 @@ class EnvironmentVariants(unittest.TestCase):
         self.assertIn('aria-label="Open the Alondra1 Web app"', self.dev)
         self.assertNotIn("Open Web App", self.prod)
         self.assertTrue(all(p["status"] != "available" for p in self.prod_cfg["platforms"]))
+        # Dev downloads are public (owner decision 2026-11-26): the rolling dev-latest prereleases.
+        for pid, url in (("windows", "alondra1-windows/releases/download/dev-latest/Alondra1-dev-setup.exe"),
+                         ("android", "alondra1-android/releases/download/dev-latest/Alondra1-dev.apk")):
+            p = next(p for p in self.dev_cfg["platforms"] if p["id"] == pid)
+            self.assertEqual(p["status"], "available")
+            self.assertTrue(p["downloadUrl"].endswith(url))
         # Apps without a verified download stay "coming soon" on dev too.
         self.assertTrue(all(p["status"] == "comingSoon" for p in self.dev_cfg["platforms"] if p["id"] in ("macos", "ios", "tablet")))
 

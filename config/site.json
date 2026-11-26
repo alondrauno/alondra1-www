@@ -28,6 +28,14 @@
         "web": {
           "status": "available",
           "downloadUrl": "https://app.alondra1.dev/"
+        },
+        "windows": {
+          "status": "available",
+          "downloadUrl": "https://github.com/alondrauno/alondra1-windows/releases/download/dev-latest/Alondra1-dev-setup.exe"
+        },
+        "android": {
+          "status": "available",
+          "downloadUrl": "https://github.com/alondrauno/alondra1-android/releases/download/dev-latest/Alondra1-dev.apk"
         }
       }
     },
